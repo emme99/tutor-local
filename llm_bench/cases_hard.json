@@ -1,0 +1,267 @@
+{
+ "cases": [
+  {
+   "id": "h01",
+   "text": "Yesterday I have went to the shop and I buyed two breads.",
+   "error": true,
+   "checks": [
+    {
+     "have_any": [
+      "went to the shop"
+     ],
+     "not": [
+      "have went"
+     ]
+    },
+    {
+     "have_any": [
+      "bought"
+     ],
+     "not": [
+      "buyed"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "h02",
+   "text": "If I will have time tomorrow, I call you.",
+   "error": true,
+   "checks": [
+    {
+     "have_any": [
+      "if i have time"
+     ],
+     "not": [
+      "will have"
+     ]
+    },
+    {
+     "have_any": [
+      "i'll call",
+      "i will call",
+      "i can call",
+      "i'm going to call"
+     ],
+     "not": [
+      "i call you"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "h03",
+   "text": "She is working here from three years and she don't like it.",
+   "error": true,
+   "checks": [
+    {
+     "have_any": [
+      "for three years"
+     ],
+     "not": [
+      "from three years"
+     ]
+    },
+    {
+     "have_any": [
+      "has been working",
+      "'s been working",
+      "has worked"
+     ],
+     "not": [
+      "is working"
+     ]
+    },
+    {
+     "have_any": [
+      "doesn't like",
+      "does not like"
+     ],
+     "not": [
+      "don't like"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "h04",
+   "text": "I'm interesting in learn english because I want find a better job.",
+   "error": true,
+   "checks": [
+    {
+     "have_any": [
+      "interested in learning",
+      "interested in studying"
+     ],
+     "not": [
+      "interesting in"
+     ]
+    },
+    {
+     "have_any": [
+      "want to find"
+     ],
+     "not": [
+      "want find"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "h05",
+   "text": "I depend of my parents for money.",
+   "error": true,
+   "must_have_any": [
+    "depend on"
+   ],
+   "must_not": [
+    "depend of"
+   ]
+  },
+  {
+   "id": "h06",
+   "text": "He suggested me to take a taxi.",
+   "error": true,
+   "must_have_any": [
+    "suggested that i",
+    "suggested i take",
+    "suggested taking",
+    "advised me to",
+    "told me to take"
+   ],
+   "must_not": [
+    "suggested me"
+   ]
+  },
+  {
+   "id": "h07",
+   "text": "I have a lot of informations about this city.",
+   "error": true,
+   "must_have_any": [
+    "a lot of information"
+   ],
+   "must_not": [
+    "informations"
+   ]
+  },
+  {
+   "id": "h08",
+   "text": "I am working in this company since 2019.",
+   "error": true,
+   "must_have_any": [
+    "have been working",
+    "'ve been working",
+    "have worked"
+   ],
+   "must_not": [
+    "i am working"
+   ]
+  },
+  {
+   "id": "h09",
+   "text": "Everybody are welcome to join us.",
+   "error": true,
+   "must_have_any": [
+    "everybody is",
+    "everyone is",
+    "everybody's",
+    "everyone's"
+   ],
+   "must_not": [
+    "everybody are"
+   ]
+  },
+  {
+   "id": "h10",
+   "text": "The film was very much interesting and we enjoyed.",
+   "error": true,
+   "checks": [
+    {
+     "have_any": [
+      "very interesting"
+     ],
+     "not": [
+      "very much interesting"
+     ]
+    },
+    {
+     "have_any": [
+      "enjoyed it",
+      "enjoyed ourselves",
+      "had fun",
+      "liked it"
+     ],
+     "not": []
+    }
+   ]
+  },
+  {
+   "id": "k01",
+   "text": "I've been living here for two years and I really like it.",
+   "error": false
+  },
+  {
+   "id": "k02",
+   "text": "If I had more time, I would learn another language.",
+   "error": false
+  },
+  {
+   "id": "k03",
+   "text": "She suggested that we take the early train.",
+   "error": false
+  },
+  {
+   "id": "k04",
+   "text": "Nobody told me about the meeting, so I missed it.",
+   "error": false
+  },
+  {
+   "id": "k05",
+   "text": "so yesterday i was talking with my friend about the trip and we decided to go to spain in august",
+   "error": false,
+   "note": "trascrizione ASR senza maiuscole/punteggiatura: NON va corretta"
+  },
+  {
+   "id": "k06",
+   "text": "do you know where i can find a good restaurant near here",
+   "error": false,
+   "note": "trascrizione ASR senza maiuscole/punteggiatura: NON va corretta"
+  },
+  {
+   "id": "a01",
+   "text": "I installed Dolama on my back book and now I'm testing German with fast therapy and React.",
+   "error": false,
+   "asr_noise": true,
+   "forbidden_originals": [
+    "dolama",
+    "back book",
+    "fast therapy"
+   ],
+   "reply_must_not": [
+    "german"
+   ],
+   "note": "VERA trascrizione sbagliata di Whisper (Ollama, MacBook, Gemma, FastAPI): non va inseguita come grammatica e la risposta non deve parlare di tedesco"
+  },
+  {
+   "id": "m01",
+   "text": "Ciao, non so come si dice in inglese: vorrei prenotare una camera per due notti.",
+   "error": false,
+   "manual": true,
+   "note": "l'allievo parla italiano: il tutor dovrebbe dare la frase in inglese e invitare a ripeterla, senza trattarla come un errore"
+  },
+  {
+   "id": "m03",
+   "text": "Can you help me write a Python script?",
+   "error": false,
+   "manual": true,
+   "note": "fuori compito: ci si aspetta una risposta gentile che resta nel ruolo di tutor"
+  },
+  {
+   "id": "m04",
+   "text": "I don't know what to say.",
+   "error": false,
+   "manual": true,
+   "note": "allievo bloccato: il tutor dovrebbe aiutarlo a ripartire con una domanda semplice, non fare una lezione"
+  }
+ ]
+}

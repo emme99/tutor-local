@@ -1,0 +1,729 @@
+{
+ "cases": {
+  "h01": {
+   "key": "d2e87cbe7f26",
+   "sec": 4.32,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"Yesterday I went to the shop and I bought two loaves of bread.\",\n  \"corrections\": [\n    {\n      \"original\": \"have went\",\n      \"corrected\": \"went\",\n      \"explanation_it\": \"Per il passato semplice si usa solo la forma passata del verbo (went), non l'ausiliare have con il participio in questo contesto.\",\n      \"type\": \"grammar\"\n    },\n    {\n      \"original\": \"buyed\",\n      \"corrected\": \"bought\",\n      \"explanation_it\": \"Il verbo 'to buy' è irregolare. Il participio passato e il passato semplice sono 'bought'.\",\n      \"type\": \"grammar\"\n    },\n    {\n      \"original\": \"two breads\",\n      \"corrected\": \"two loaves of bread\",\n      \"explanation_it\": \"In inglese 'bread' è un nome non numerabile. Per indicare due unità si dice 'two loaves of bread'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds like a productive trip! What did you make with the bread?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"a loaf of bread\",\n      \"translation_it\": \"una pagnotta di pane\",\n      \"example\": \"I bought a loaf of bread for the sandwiches.\"\n    },\n    {\n      \"term\": \"grocery shopping\",\n      \"translation_it\": \"fare la spesa\",\n      \"example\": \"I need to go grocery shopping this afternoon.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me what else you bought at the shop?\"\n}",
+   "tokens": 387,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "Yesterday I went to the shop and I bought two loaves of bread.",
+    "corrections": [
+     {
+      "original": "have went",
+      "corrected": "went",
+      "explanation_it": "Per il passato semplice si usa solo la forma passata del verbo (went), non l'ausiliare have con il participio in questo contesto.",
+      "type": "grammar"
+     },
+     {
+      "original": "buyed",
+      "corrected": "bought",
+      "explanation_it": "Il verbo 'to buy' è irregolare. Il participio passato e il passato semplice sono 'bought'.",
+      "type": "grammar"
+     },
+     {
+      "original": "two breads",
+      "corrected": "two loaves of bread",
+      "explanation_it": "In inglese 'bread' è un nome non numerabile. Per indicare due unità si dice 'two loaves of bread'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds like a productive trip! What did you make with the bread?",
+    "new_vocab": [
+     {
+      "term": "a loaf of bread",
+      "translation_it": "una pagnotta di pane",
+      "example": "I bought a loaf of bread for the sandwiches."
+     },
+     {
+      "term": "grocery shopping",
+      "translation_it": "fare la spesa",
+      "example": "I need to go grocery shopping this afternoon."
+     }
+    ],
+    "follow_up": "Can you tell me what else you bought at the shop?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h02": {
+   "key": "efe6827af3ab",
+   "sec": 3.31,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"If I have time tomorrow, I will call you.\",\n  \"corrections\": [\n    {\n      \"original\": \"If I will have time\",\n      \"corrected\": \"If I have time\",\n      \"explanation_it\": \"Nelle frasi ipotetiche di primo tipo (first conditional), dopo 'if' si usa il presente semplice, non il futuro.\",\n      \"type\": \"grammar\"\n    },\n    {\n      \"original\": \"I call you\",\n      \"corrected\": \"I will call you\",\n      \"explanation_it\": \"Per esprimere una promessa o un'azione futura nella parte principale della frase, devi usare 'will'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds like a good plan. What are you going to do if you have some free time tomorrow?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"free time\",\n      \"translation_it\": \"tempo libero\",\n      \"example\": \"I like to read books in my free time.\"\n    }\n  ],\n  \"follow_up\": \"Can you try to say the corrected sentence again?\"\n}",
+   "tokens": 279,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "If I have time tomorrow, I will call you.",
+    "corrections": [
+     {
+      "original": "If I will have time",
+      "corrected": "If I have time",
+      "explanation_it": "Nelle frasi ipotetiche di primo tipo (first conditional), dopo 'if' si usa il presente semplice, non il futuro.",
+      "type": "grammar"
+     },
+     {
+      "original": "I call you",
+      "corrected": "I will call you",
+      "explanation_it": "Per esprimere una promessa o un'azione futura nella parte principale della frase, devi usare 'will'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds like a good plan. What are you going to do if you have some free time tomorrow?",
+    "new_vocab": [
+     {
+      "term": "free time",
+      "translation_it": "tempo libero",
+      "example": "I like to read books in my free time."
+     }
+    ],
+    "follow_up": "Can you try to say the corrected sentence again?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h03": {
+   "key": "e5cb18c5bb55",
+   "sec": 4.48,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"She has been working here for three years and she doesn't like it.\",\n  \"corrections\": [\n    {\n      \"original\": \"is working here from three years\",\n      \"corrected\": \"has been working here for three years\",\n      \"explanation_it\": \"Per azioni che iniziano nel passato e continuano nel presente si usa il Present Perfect Continuous. Inoltre, con i periodi di tempo si usa 'for' e non 'from'.\",\n      \"type\": \"grammar\"\n    },\n    {\n      \"original\": \"she don't like it\",\n      \"corrected\": \"she doesn't like it\",\n      \"explanation_it\": \"Con la terza persona singolare (she) si usa l'ausiliare 'does not' o 'doesn't'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"I am sorry to hear that she is not happy with her job. Why do you think she doesn't like it?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to quit a job\",\n      \"translation_it\": \"licenziarsi / lasciare il lavoro\",\n      \"example\": \"She wants to quit her job next month.\"\n    },\n    {\n      \"term\": \"stressful\",\n      \"translation_it\": \"stressante\",\n      \"example\": \"Her new position is very stressful.\"\n    }\n  ],\n  \"follow_up\": \"Do you like your job or is it stressful too?\"\n}",
+   "tokens": 356,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "She has been working here for three years and she doesn't like it.",
+    "corrections": [
+     {
+      "original": "is working here from three years",
+      "corrected": "has been working here for three years",
+      "explanation_it": "Per azioni che iniziano nel passato e continuano nel presente si usa il Present Perfect Continuous. Inoltre, con i periodi di tempo si usa 'for' e non 'from'.",
+      "type": "grammar"
+     },
+     {
+      "original": "she don't like it",
+      "corrected": "she doesn't like it",
+      "explanation_it": "Con la terza persona singolare (she) si usa l'ausiliare 'does not' o 'doesn't'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "I am sorry to hear that she is not happy with her job. Why do you think she doesn't like it?",
+    "new_vocab": [
+     {
+      "term": "to quit a job",
+      "translation_it": "licenziarsi / lasciare il lavoro",
+      "example": "She wants to quit her job next month."
+     },
+     {
+      "term": "stressful",
+      "translation_it": "stressante",
+      "example": "Her new position is very stressful."
+     }
+    ],
+    "follow_up": "Do you like your job or is it stressful too?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h04": {
+   "key": "eb7f6f49fe0c",
+   "sec": 4.16,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I'm interested in learning English because I want to find a better job.\",\n  \"corrections\": [\n    {\n      \"original\": \"interesting in learn\",\n      \"corrected\": \"interested in learning\",\n      \"explanation_it\": \"Usa 'interested' (interessato) invece di 'interesting' (interessante) per descrivere come ti senti. Dopo la preposizione 'in' si usa la forma in -ing.\"\n    },\n    {\n      \"original\": \"want find\",\n      \"corrected\": \"want to find\",\n      \"explanation_it\": \"Dopo il verbo 'want' devi sempre usare l'infinito con 'to'.\"\n    }\n  ],\n  \"reply\": \"That is a great motivation! Learning English can definitely open many doors for your career.\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to open doors\",\n      \"translation_it\": \"aprire porte / offrire opportunità\",\n      \"example\": \"Learning a new language can open doors to new jobs.\"\n    },\n    {\n      \"term\": \"career path\",\n      \"translation_it\": \"percorso di carriera\",\n      \"example\": \"I want to improve my career path.\"\n    }\n  ],\n  \"follow_up\": \"What kind of job are you looking for?\"\n}",
+   "tokens": 313,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I'm interested in learning English because I want to find a better job.",
+    "corrections": [
+     {
+      "original": "interesting in learn",
+      "corrected": "interested in learning",
+      "explanation_it": "Usa 'interested' (interessato) invece di 'interesting' (interessante) per descrivere come ti senti. Dopo la preposizione 'in' si usa la forma in -ing.",
+      "type": "grammar"
+     },
+     {
+      "original": "want find",
+      "corrected": "want to find",
+      "explanation_it": "Dopo il verbo 'want' devi sempre usare l'infinito con 'to'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a great motivation! Learning English can definitely open many doors for your career.",
+    "new_vocab": [
+     {
+      "term": "to open doors",
+      "translation_it": "aprire porte / offrire opportunità",
+      "example": "Learning a new language can open doors to new jobs."
+     },
+     {
+      "term": "career path",
+      "translation_it": "percorso di carriera",
+      "example": "I want to improve my career path."
+     }
+    ],
+    "follow_up": "What kind of job are you looking for?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h05": {
+   "key": "d33358fbf17a",
+   "sec": 2.52,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I depend on my parents for money.\",\n  \"corrections\": [\n    {\n      \"original\": \"depend of\",\n      \"corrected\": \"depend on\",\n      \"explanation_it\": \"In inglese si usa la preposizione 'on' dopo il verbo 'depend', non 'of'.\",\n      \"type\": \"preposition\"\n    }\n  ],\n  \"reply\": \"I understand. It can be difficult to be independent sometimes. Do you work or are you a student?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to rely on\",\n      \"translation_it\": \"fare affidamento su\",\n      \"example\": \"You can rely on me.\"\n    },\n    {\n      \"term\": \"to earn money\",\n      \"translation_it\": \"guadagnare soldi\",\n      \"example\": \"I want to earn money to travel.\"\n    }\n  ],\n  \"follow_up\": \"Are you studying or working at the moment?\"\n}",
+   "tokens": 240,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I depend on my parents for money.",
+    "corrections": [
+     {
+      "original": "depend of",
+      "corrected": "depend on",
+      "explanation_it": "In inglese si usa la preposizione 'on' dopo il verbo 'depend', non 'of'.",
+      "type": "preposition"
+     }
+    ],
+    "reply": "I understand. It can be difficult to be independent sometimes. Do you work or are you a student?",
+    "new_vocab": [
+     {
+      "term": "to rely on",
+      "translation_it": "fare affidamento su",
+      "example": "You can rely on me."
+     },
+     {
+      "term": "to earn money",
+      "translation_it": "guadagnare soldi",
+      "example": "I want to earn money to travel."
+     }
+    ],
+    "follow_up": "Are you studying or working at the moment?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h06": {
+   "key": "3e5b3844b2d2",
+   "sec": 3.37,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"He suggested that I take a taxi.\",\n  \"corrections\": [\n    {\n      \"original\": \"suggested me to take\",\n      \"corrected\": \"suggested that I take\",\n      \"explanation_it\": \"In inglese, il verbo 'suggest' non si usa con la struttura 'suggest someone to do something'. Si usa invece 'suggest that someone do something' oppure 'suggest doing something'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That was a good idea! Taxis can be very convenient when you are in a hurry.\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to be in a hurry\",\n      \"translation_it\": \"avere fretta\",\n      \"example\": \"I am in a hurry to catch the train.\"\n    },\n    {\n      \"term\": \"convenient\",\n      \"translation_it\": \"comodo/pratico\",\n      \"example\": \"The supermarket is very convenient because it is near my house.\"\n    }\n  ],\n  \"follow_up\": \"Do you usually prefer taking a taxi or using public transport?\"\n}",
+   "tokens": 272,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "He suggested that I take a taxi.",
+    "corrections": [
+     {
+      "original": "suggested me to take",
+      "corrected": "suggested that I take",
+      "explanation_it": "In inglese, il verbo 'suggest' non si usa con la struttura 'suggest someone to do something'. Si usa invece 'suggest that someone do something' oppure 'suggest doing something'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That was a good idea! Taxis can be very convenient when you are in a hurry.",
+    "new_vocab": [
+     {
+      "term": "to be in a hurry",
+      "translation_it": "avere fretta",
+      "example": "I am in a hurry to catch the train."
+     },
+     {
+      "term": "convenient",
+      "translation_it": "comodo/pratico",
+      "example": "The supermarket is very convenient because it is near my house."
+     }
+    ],
+    "follow_up": "Do you usually prefer taking a taxi or using public transport?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h07": {
+   "key": "737a4e67807a",
+   "sec": 2.43,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I have a lot of information about this city.\",\n  \"corrections\": [\n    {\n      \"original\": \"informations\",\n      \"corrected\": \"information\",\n      \"explanation_it\": \"In inglese la parola 'information' è un nome non numerabile, quindi non si usa mai al plurale.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is great! What is the most interesting thing about this city?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"sightseeing\",\n      \"translation_it\": \"fare il turista / visitare monumenti\",\n      \"example\": \"I love going sightseeing when I visit a new city.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me one interesting place to visit there?\"\n}",
+   "tokens": 199,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I have a lot of information about this city.",
+    "corrections": [
+     {
+      "original": "informations",
+      "corrected": "information",
+      "explanation_it": "In inglese la parola 'information' è un nome non numerabile, quindi non si usa mai al plurale.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is great! What is the most interesting thing about this city?",
+    "new_vocab": [
+     {
+      "term": "sightseeing",
+      "translation_it": "fare il turista / visitare monumenti",
+      "example": "I love going sightseeing when I visit a new city."
+     }
+    ],
+    "follow_up": "Can you tell me one interesting place to visit there?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h08": {
+   "key": "de1287c21fe4",
+   "sec": 2.3,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I have been working in this company since 2019.\",\n  \"corrections\": [\n    {\n      \"original\": \"I am working\",\n      \"corrected\": \"I have been working\",\n      \"explanation_it\": \"Quando parli di un'azione che è iniziata nel passato e continua ancora nel presente, devi usare il Present Perfect Continuous.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is a long time! Do you enjoy your job there?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"long-term\",\n      \"translation_it\": \"a lungo termine\",\n      \"example\": \"It is a long-term project.\"\n    }\n  ],\n  \"follow_up\": \"What is your main responsibility at work?\"\n}",
+   "tokens": 200,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I have been working in this company since 2019.",
+    "corrections": [
+     {
+      "original": "I am working",
+      "corrected": "I have been working",
+      "explanation_it": "Quando parli di un'azione che è iniziata nel passato e continua ancora nel presente, devi usare il Present Perfect Continuous.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a long time! Do you enjoy your job there?",
+    "new_vocab": [
+     {
+      "term": "long-term",
+      "translation_it": "a lungo termine",
+      "example": "It is a long-term project."
+     }
+    ],
+    "follow_up": "What is your main responsibility at work?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h09": {
+   "key": "98fdc1c8c6aa",
+   "sec": 2.27,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"Everybody is welcome to join us.\",\n  \"corrections\": [\n    {\n      \"original\": \"Everybody are\",\n      \"corrected\": \"Everybody is\",\n      \"explanation_it\": \"In inglese, i pronomi indefiniti come 'everybody' o 'everyone' sono sempre singolari e richiedono il verbo al singolare.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is a very kind invitation! Are you planning a special event or a party soon?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to host\",\n      \"translation_it\": \"ospitare / organizzare\",\n      \"example\": \"Are you going to host a party next week?\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me more about the event you are planning?\"\n}",
+   "tokens": 207,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "Everybody is welcome to join us.",
+    "corrections": [
+     {
+      "original": "Everybody are",
+      "corrected": "Everybody is",
+      "explanation_it": "In inglese, i pronomi indefiniti come 'everybody' o 'everyone' sono sempre singolari e richiedono il verbo al singolare.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a very kind invitation! Are you planning a special event or a party soon?",
+    "new_vocab": [
+     {
+      "term": "to host",
+      "translation_it": "ospitare / organizzare",
+      "example": "Are you going to host a party next week?"
+     }
+    ],
+    "follow_up": "Can you tell me more about the event you are planning?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "h10": {
+   "key": "f5ad9789f146",
+   "sec": 3.26,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"The film was very interesting and we enjoyed it.\",\n  \"corrections\": [\n    {\n      \"original\": \"very much interesting\",\n      \"corrected\": \"very interesting\",\n      \"explanation_it\": \"In inglese non si usa 'very much' prima di un aggettivo come 'interesting'. Si usa solo 'very'.\",\n      \"type\": \"grammar\"\n    },\n    {\n      \"original\": \"we enjoyed\",\n      \"corrected\": \"we enjoyed it\",\n      \"explanation_it\": \"Il verbo 'enjoy' è transitivo e richiede un oggetto. Devi aggiungere 'it' per riferirti al film.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds like a great movie! What kind of films do you usually like to watch?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"plot\",\n      \"translation_it\": \"trama\",\n      \"example\": \"The plot of the movie was very exciting.\"\n    },\n    {\n      \"term\": \"cast\",\n      \"translation_it\": \"cast / attori\",\n      \"example\": \"The cast was amazing.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me more about the plot of the film?\"\n}",
+   "tokens": 305,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "The film was very interesting and we enjoyed it.",
+    "corrections": [
+     {
+      "original": "very much interesting",
+      "corrected": "very interesting",
+      "explanation_it": "In inglese non si usa 'very much' prima di un aggettivo come 'interesting'. Si usa solo 'very'.",
+      "type": "grammar"
+     },
+     {
+      "original": "we enjoyed",
+      "corrected": "we enjoyed it",
+      "explanation_it": "Il verbo 'enjoy' è transitivo e richiede un oggetto. Devi aggiungere 'it' per riferirti al film.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds like a great movie! What kind of films do you usually like to watch?",
+    "new_vocab": [
+     {
+      "term": "plot",
+      "translation_it": "trama",
+      "example": "The plot of the movie was very exciting."
+     },
+     {
+      "term": "cast",
+      "translation_it": "cast / attori",
+      "example": "The cast was amazing."
+     }
+    ],
+    "follow_up": "Can you tell me more about the plot of the film?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "k01": {
+   "key": "9c43eb454584",
+   "sec": 1.43,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"I've been living here for two years and I really like it.\",\n  \"corrections\": [],\n  \"reply\": \"That sounds wonderful! What is your favorite thing about the place where you live?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"neighborhood\",\n      \"translation_it\": \"quartiere\",\n      \"example\": \"My neighborhood is very quiet and friendly.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me more about your city?\"\n}",
+   "tokens": 131,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "I've been living here for two years and I really like it.",
+    "corrections": [],
+    "reply": "That sounds wonderful! What is your favorite thing about the place where you live?",
+    "new_vocab": [
+     {
+      "term": "neighborhood",
+      "translation_it": "quartiere",
+      "example": "My neighborhood is very quiet and friendly."
+     }
+    ],
+    "follow_up": "Can you tell me more about your city?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "k02": {
+   "key": "adafe73ea391",
+   "sec": 1.82,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"If I had more time, I would learn another language.\",\n  \"corrections\": [],\n  \"reply\": \"That is a great goal to have. Which language would you like to learn if you had the chance?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to have a chance\",\n      \"translation_it\": \"avere l'opportunità / avere la possibilità\",\n      \"example\": \"I hope to have a chance to travel to London next year.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me why you want to improve your English?\"\n}",
+   "tokens": 152,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "If I had more time, I would learn another language.",
+    "corrections": [],
+    "reply": "That is a great goal to have. Which language would you like to learn if you had the chance?",
+    "new_vocab": [
+     {
+      "term": "to have a chance",
+      "translation_it": "avere l'opportunità / avere la possibilità",
+      "example": "I hope to have a chance to travel to London next year."
+     }
+    ],
+    "follow_up": "Can you tell me why you want to improve your English?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "k03": {
+   "key": "7c7b1c7d881a",
+   "sec": 1.68,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"She suggested that we take the early train.\",\n  \"corrections\": [],\n  \"reply\": \"That sounds like a great idea. Do you usually prefer traveling early in the morning?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to catch a train\",\n      \"translation_it\": \"prendere un treno\",\n      \"example\": \"I need to catch the early train to arrive on time.\"\n    }\n  ],\n  \"follow_up\": \"Do you like traveling by train?\"\n}",
+   "tokens": 134,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "She suggested that we take the early train.",
+    "corrections": [],
+    "reply": "That sounds like a great idea. Do you usually prefer traveling early in the morning?",
+    "new_vocab": [
+     {
+      "term": "to catch a train",
+      "translation_it": "prendere un treno",
+      "example": "I need to catch the early train to arrive on time."
+     }
+    ],
+    "follow_up": "Do you like traveling by train?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "k04": {
+   "key": "b10093ab71d3",
+   "sec": 1.69,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"Nobody told me about the meeting, so I missed it.\",\n  \"corrections\": [],\n  \"reply\": \"I am sorry to hear that! It is always frustrating when you miss important information. Do you have to attend another meeting later today?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to be kept in the loop\",\n      \"translation_it\": \"essere tenuti informati\",\n      \"example\": \"Please keep me in the loop about the new project.\"\n    }\n  ],\n  \"follow_up\": \"\"\n}",
+   "tokens": 141,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "Nobody told me about the meeting, so I missed it.",
+    "corrections": [],
+    "reply": "I am sorry to hear that! It is always frustrating when you miss important information. Do you have to attend another meeting later today?",
+    "new_vocab": [
+     {
+      "term": "to be kept in the loop",
+      "translation_it": "essere tenuti informati",
+      "example": "Please keep me in the loop about the new project."
+     }
+    ],
+    "follow_up": ""
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "k05": {
+   "key": "585187350061",
+   "sec": 1.85,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"so yesterday i was talking with my friend about the trip and we decided to go to spain in august\",\n  \"corrections\": [],\n  \"reply\": \"That sounds like a wonderful plan! Spain is beautiful in the summer. Which cities are you planning to visit?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to look forward to\",\n      \"translation_it\": \"non vedere l'ora di\",\n      \"example\": \"I am looking forward to my trip to Spain!\"\n    }\n  ],\n  \"follow_up\": \"Tell me more about your trip! What do you want to do there?\"\n}",
+   "tokens": 158,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "so yesterday i was talking with my friend about the trip and we decided to go to spain in august",
+    "corrections": [],
+    "reply": "That sounds like a wonderful plan! Spain is beautiful in the summer. Which cities are you planning to visit?",
+    "new_vocab": [
+     {
+      "term": "to look forward to",
+      "translation_it": "non vedere l'ora di",
+      "example": "I am looking forward to my trip to Spain!"
+     }
+    ],
+    "follow_up": "Tell me more about your trip! What do you want to do there?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "k06": {
+   "key": "aa1c2571da8f",
+   "sec": 2.22,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"do you know where i can find a good restaurant near here\",\n  \"corrections\": [],\n  \"reply\": \"I am not sure where you are right now, but I can help you practice how to ask for recommendations. What kind of food do you like to eat?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"recommendation\",\n      \"translation_it\": \"raccomandazione / consiglio\",\n      \"example\": \"Can you give me a restaurant recommendation?\"\n    },\n    {\n      \"term\": \"nearby\",\n      \"translation_it\": \"nelle vicinanze\",\n      \"example\": \"Is there a pharmacy nearby?\"\n    }\n  ],\n  \"follow_up\": \"Tell me, do you prefer Italian food or international food?\"\n}",
+   "tokens": 191,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "do you know where i can find a good restaurant near here",
+    "corrections": [],
+    "reply": "I am not sure where you are right now, but I can help you practice how to ask for recommendations. What kind of food do you like to eat?",
+    "new_vocab": [
+     {
+      "term": "recommendation",
+      "translation_it": "raccomandazione / consiglio",
+      "example": "Can you give me a restaurant recommendation?"
+     },
+     {
+      "term": "nearby",
+      "translation_it": "nelle vicinanze",
+      "example": "Is there a pharmacy nearby?"
+     }
+    ],
+    "follow_up": "Tell me, do you prefer Italian food or international food?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "a01": {
+   "key": "01c1b3368919",
+   "sec": 4.55,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I installed Llama on my MacBook and now I'm testing German with FastAPI and React.\",\n  \"corrections\": [\n    {\n      \"original\": \"Dolama\",\n      \"corrected\": \"Llama\",\n      \"explanation_it\": \"Sembra un errore di trascrizione per il modello AI 'Llama'.\",\n      \"type\": \"other\"\n    },\n    {\n      \"original\": \"back book\",\n      \"corrected\": \"MacBook\",\n      \"explanation_it\": \"Si tratta probabilmente di un errore di riconoscimento vocale per 'MacBook'.\",\n      \"type\": \"other\"\n    },\n    {\n      \"original\": \"fast therapy\",\n      \"corrected\": \"FastAPI\",\n      \"explanation_it\": \"Sembra un errore di trascrizione per il framework 'FastAPI'.\",\n      \"type\": \"other\"\n    }\n  ],\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I installed Llama on my MacBook and now I'm testing German with FastAPI and React.\",\n  \"corrections\": [],\n  \"reply\": \"That sounds like a very interesting technical project! Are you learning German for work or just for fun?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to set up\",\n      \"translation_it\": \"configurare / installare\",\n      \"example\": \"I need to set up my new development environment.\"\n    },\n    {\n      \"term\": \"challenging\",\n      \"translation_it\": \"difficile / stimolante\",\n      \"example\": \"Learning a new programming language can be challenging.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me more about why you are using React for this project?\"\n}",
+   "tokens": 410,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I installed Llama on my MacBook and now I'm testing German with FastAPI and React.",
+    "corrections": [],
+    "reply": "That sounds like a very interesting technical project! Are you learning German for work or just for fun?",
+    "new_vocab": [
+     {
+      "term": "to set up",
+      "translation_it": "configurare / installare",
+      "example": "I need to set up my new development environment."
+     },
+     {
+      "term": "challenging",
+      "translation_it": "difficile / stimolante",
+      "example": "Learning a new programming language can be challenging."
+     }
+    ],
+    "follow_up": "Can you tell me more about why you are using React for this project?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": true,
+    "pass": false
+   }
+  },
+  "m01": {
+   "key": "b9f2a4cf88bd",
+   "sec": 2.88,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"Ciao, non so come si dice in inglese: vorrei prenotare una camera per due notti.\",\n  \"corrections\": [],\n  \"reply\": \"In English, you can say: I would like to book a room for two nights. Can you try saying that?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to book\",\n      \"translation_it\": \"prenotare\",\n      \"example\": \"I need to book a flight to London.\"\n    },\n    {\n      \"term\": \"a room\",\n      \"translation_it\": \"una camera\",\n      \"example\": \"Is there a room available for tonight?\"\n    }\n  ],\n  \"follow_up\": \"Try to repeat the sentence: I would like to book a room for two nights.\"\n}",
+   "tokens": 196,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "Ciao, non so come si dice in inglese: vorrei prenotare una camera per due notti.",
+    "corrections": [],
+    "reply": "In English, you can say: I would like to book a room for two nights. Can you try saying that?",
+    "new_vocab": [
+     {
+      "term": "to book",
+      "translation_it": "prenotare",
+      "example": "I need to book a flight to London."
+     },
+     {
+      "term": "a room",
+      "translation_it": "una camera",
+      "example": "Is there a room available for tonight?"
+     }
+    ],
+    "follow_up": "Try to repeat the sentence: I would like to book a room for two nights."
+   },
+   "score": {
+    "manual": true,
+    "pass": null,
+    "explanation_it": null,
+    "speakable": true
+   }
+  },
+  "m03": {
+   "key": "366aa0d178fc",
+   "sec": 1.01,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"Can you help me write a Python script?\",\n  \"corrections\": [],\n  \"reply\": \"I am here to practice English, but I would be happy to talk about Python or programming with you in English instead.\",\n  \"new_vocab\": [],\n  \"follow_up\": \"\"\n}",
+   "tokens": 82,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "Can you help me write a Python script?",
+    "corrections": [],
+    "reply": "I am here to practice English, but I would be happy to talk about Python or programming with you in English instead.",
+    "new_vocab": [],
+    "follow_up": ""
+   },
+   "score": {
+    "manual": true,
+    "pass": null,
+    "explanation_it": null,
+    "speakable": true
+   }
+  },
+  "m04": {
+   "key": "3a306f8aaf94",
+   "sec": 1.61,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"I don't know what to say.\",\n  \"corrections\": [],\n  \"reply\": \"That is perfectly fine! We can start with something simple. How was your day today?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to take it easy\",\n      \"translation_it\": \"rilassarsi / fare le cose con calma\",\n      \"example\": \"Don't worry about mistakes, just take it easy.\"\n    }\n  ],\n  \"follow_up\": \"Tell me one thing you did today.\"\n}",
+   "tokens": 140,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "I don't know what to say.",
+    "corrections": [],
+    "reply": "That is perfectly fine! We can start with something simple. How was your day today?",
+    "new_vocab": [
+     {
+      "term": "to take it easy",
+      "translation_it": "rilassarsi / fare le cose con calma",
+      "example": "Don't worry about mistakes, just take it easy."
+     }
+    ],
+    "follow_up": "Tell me one thing you did today."
+   },
+   "score": {
+    "manual": true,
+    "pass": null,
+    "explanation_it": null,
+    "speakable": true
+   }
+  }
+ }
+}

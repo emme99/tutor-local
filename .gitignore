@@ -1,0 +1,14 @@
+# ambiente e segreti
+.env
+.venv/
+backend/.venv/
+# dati personali (frasi dell'allievo, cache)
+data/
+# build e dipendenze
+node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.DS_Store
+# risultati del benchmark LLM: sono piccoli e documentano le decisioni; togli il commento se non vuoi versionarli
+# llm_bench/results/

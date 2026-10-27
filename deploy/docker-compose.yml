@@ -1,0 +1,21 @@
+# BOZZA NON TESTATA. Avvio:  docker compose -f deploy/docker-compose.yml up --build
+services:
+  tutor:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "127.0.0.1:8010:8010"        # solo localhost: il microfono del browser richiede localhost o HTTPS
+    environment:
+      LLM_BASE_URL: http://host.docker.internal:11434/v1     # Ollama (o Splash: porta 8000)
+      LLM_MODEL: gemma4:26b
+      STT_BACKEND: openai
+      STT_BASE_URL: http://host.docker.internal:9000/v1      # DA FORNIRE: server STT OpenAI-compatible sull'host
+      STT_API_MODEL: whisper-1
+      TTS_BASE_URL: http://host.docker.internal:5050/v1      # il tuo openai-macos-stt-tts
+    extra_hosts:
+      - "host.docker.internal:host-gateway"                  # necessario su Linux
+    volumes:
+      - tutor-data:/data
+volumes:
+  tutor-data: {}

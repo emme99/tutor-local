@@ -1,0 +1,971 @@
+{
+ "cases": {
+  "e01": {
+   "key": "7992466637c7",
+   "sec": 2.87,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I agree with you.\",\n  \"corrections\": [\n    {\n      \"original\": \"I am agree\",\n      \"corrected\": \"I agree\",\n      \"explanation_it\": \"In inglese non si dice 'io sono d'accordo' usando il verbo essere, ma si usa direttamente il verbo 'to agree'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is a very common mistake, but don't worry! I am glad we are on the same page. What do you think about our topic today?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to be on the same page\",\n      \"translation_it\": \"essere sulla stessa lunghezza d'onda / essere d'accordo\",\n      \"example\": \"I am glad we are on the same page about the plan.\"\n    }\n  ],\n  \"follow_up\": \"Can you try to say 'I agree' in a full sentence about your favorite food?\"\n}",
+   "tokens": 238,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I agree with you.",
+    "corrections": [
+     {
+      "original": "I am agree",
+      "corrected": "I agree",
+      "explanation_it": "In inglese non si dice 'io sono d'accordo' usando il verbo essere, ma si usa direttamente il verbo 'to agree'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a very common mistake, but don't worry! I am glad we are on the same page. What do you think about our topic today?",
+    "new_vocab": [
+     {
+      "term": "to be on the same page",
+      "translation_it": "essere sulla stessa lunghezza d'onda / essere d'accordo",
+      "example": "I am glad we are on the same page about the plan."
+     }
+    ],
+    "follow_up": "Can you try to say 'I agree' in a full sentence about your favorite food?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e02": {
+   "key": "151268fa32e2",
+   "sec": 2.57,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I am 30 years old.\",\n  \"corrections\": [\n    {\n      \"original\": \"I have 30 years old\",\n      \"corrected\": \"I am 30 years old\",\n      \"explanation_it\": \"In inglese non si usa il verbo 'avere' per l'età, ma il verbo 'essere'. Si dice 'I am 30'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"Nice to meet you! So, how are you feeling today?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to be in your thirties\",\n      \"translation_it\": \"avere trent'anni / essere nei trent'anni\",\n      \"example\": \"I am in my thirties.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me what you do for a living?\"\n}",
+   "tokens": 219,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I am 30 years old.",
+    "corrections": [
+     {
+      "original": "I have 30 years old",
+      "corrected": "I am 30 years old",
+      "explanation_it": "In inglese non si usa il verbo 'avere' per l'età, ma il verbo 'essere'. Si dice 'I am 30'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "Nice to meet you! So, how are you feeling today?",
+    "new_vocab": [
+     {
+      "term": "to be in your thirties",
+      "translation_it": "avere trent'anni / essere nei trent'anni",
+      "example": "I am in my thirties."
+     }
+    ],
+    "follow_up": "Can you tell me what you do for a living?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e03": {
+   "key": "6ae2b34e86fb",
+   "sec": 2.21,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"She doesn't like coffee.\",\n  \"corrections\": [\n    {\n      \"original\": \"don't\",\n      \"corrected\": \"doesn't\",\n      \"explanation_it\": \"Con la terza persona singolare (he, she, it) si usa 'does not' o la contrazione 'doesn't'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is a common mistake, but don't worry! Do you prefer coffee or tea?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to prefer\",\n      \"translation_it\": \"preferire\",\n      \"example\": \"I prefer tea to coffee.\"\n    }\n  ],\n  \"follow_up\": \"Try to answer: Do you prefer coffee or tea?\"\n}",
+   "tokens": 201,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "She doesn't like coffee.",
+    "corrections": [
+     {
+      "original": "don't",
+      "corrected": "doesn't",
+      "explanation_it": "Con la terza persona singolare (he, she, it) si usa 'does not' o la contrazione 'doesn't'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a common mistake, but don't worry! Do you prefer coffee or tea?",
+    "new_vocab": [
+     {
+      "term": "to prefer",
+      "translation_it": "preferire",
+      "example": "I prefer tea to coffee."
+     }
+    ],
+    "follow_up": "Try to answer: Do you prefer coffee or tea?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e04": {
+   "key": "fe19d97acd89",
+   "sec": 1.96,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"Yesterday I went to the cinema with my friends.\",\n  \"corrections\": [\n    {\n      \"original\": \"go\",\n      \"corrected\": \"went\",\n      \"explanation_it\": \"Si usa il past simple 'went' perché l'azione è avvenuta ieri.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds fun! What movie did you see at the cinema?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to go out\",\n      \"translation_it\": \"uscire\",\n      \"example\": \"I like to go out with my friends on weekends.\"\n    }\n  ],\n  \"follow_up\": \"Tell me about the movie!\"\n}",
+   "tokens": 183,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "Yesterday I went to the cinema with my friends.",
+    "corrections": [
+     {
+      "original": "go",
+      "corrected": "went",
+      "explanation_it": "Si usa il past simple 'went' perché l'azione è avvenuta ieri.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds fun! What movie did you see at the cinema?",
+    "new_vocab": [
+     {
+      "term": "to go out",
+      "translation_it": "uscire",
+      "example": "I like to go out with my friends on weekends."
+     }
+    ],
+    "follow_up": "Tell me about the movie!"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e05": {
+   "key": "7f911a6006b4",
+   "sec": 2.67,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I have lived here for two years.\",\n  \"corrections\": [\n    {\n      \"original\": \"I live here since two years\",\n      \"corrected\": \"I have lived here for two years\",\n      \"explanation_it\": \"In inglese, per un'azione che è iniziata nel passato e continua nel presente, si usa il Present Perfect. Inoltre, si usa 'for' per indicare la durata (due anni) e 'since' per indicare il momento preciso dell'inizio.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is great! How do you like living there so far?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"so far\",\n      \"translation_it\": \"finora\",\n      \"example\": \"How is your new job going so far?\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me one thing you love about your city?\"\n}",
+   "tokens": 232,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I have lived here for two years.",
+    "corrections": [
+     {
+      "original": "I live here since two years",
+      "corrected": "I have lived here for two years",
+      "explanation_it": "In inglese, per un'azione che è iniziata nel passato e continua nel presente, si usa il Present Perfect. Inoltre, si usa 'for' per indicare la durata (due anni) e 'since' per indicare il momento preciso dell'inizio.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is great! How do you like living there so far?",
+    "new_vocab": [
+     {
+      "term": "so far",
+      "translation_it": "finora",
+      "example": "How is your new job going so far?"
+     }
+    ],
+    "follow_up": "Can you tell me one thing you love about your city?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e06": {
+   "key": "4eef430de532",
+   "sec": 2.13,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"People are very friendly in my city.\",\n  \"corrections\": [\n    {\n      \"original\": \"People is\",\n      \"corrected\": \"People are\",\n      \"explanation_it\": \"In inglese la parola 'people' è plurale, quindi richiede il verbo al plurale 'are'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds lovely! I love visiting cities where the locals are welcoming.\",\n  \"new_vocab\": [\n    {\n      \"term\": \"welcoming\",\n      \"translation_it\": \"accogliente\",\n      \"example\": \"The people in this village are very welcoming.\"\n    }\n  ],\n  \"follow_up\": \"What is the name of your city?\"\n}",
+   "tokens": 189,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "People are very friendly in my city.",
+    "corrections": [
+     {
+      "original": "People is",
+      "corrected": "People are",
+      "explanation_it": "In inglese la parola 'people' è plurale, quindi richiede il verbo al plurale 'are'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds lovely! I love visiting cities where the locals are welcoming.",
+    "new_vocab": [
+     {
+      "term": "welcoming",
+      "translation_it": "accogliente",
+      "example": "The people in this village are very welcoming."
+     }
+    ],
+    "follow_up": "What is the name of your city?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e07": {
+   "key": "1686e3fb2449",
+   "sec": 2.35,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I want you to come with me.\",\n  \"corrections\": [\n    {\n      \"original\": \"I want that you come\",\n      \"corrected\": \"I want you to come\",\n      \"explanation_it\": \"In inglese non si dice 'I want that you...', ma si usa la struttura 'want + persona + to + verbo'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"I would love to go with you! Where are we going?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to go along\",\n      \"translation_it\": \"venire insieme / accompagnare\",\n      \"example\": \"Can I go along with you?\"\n    }\n  ],\n  \"follow_up\": \"Can you try to use 'I want you to...' in a new sentence?\"\n}",
+   "tokens": 208,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I want you to come with me.",
+    "corrections": [
+     {
+      "original": "I want that you come",
+      "corrected": "I want you to come",
+      "explanation_it": "In inglese non si dice 'I want that you...', ma si usa la struttura 'want + persona + to + verbo'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "I would love to go with you! Where are we going?",
+    "new_vocab": [
+     {
+      "term": "to go along",
+      "translation_it": "venire insieme / accompagnare",
+      "example": "Can I go along with you?"
+     }
+    ],
+    "follow_up": "Can you try to use 'I want you to...' in a new sentence?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e08": {
+   "key": "200b8ad5727e",
+   "sec": 1.99,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"Can you explain this word to me?\",\n  \"corrections\": [\n    {\n      \"original\": \"explain me this word\",\n      \"corrected\": \"explain this word to me\",\n      \"explanation_it\": \"In inglese il verbo 'explain' richiede la preposizione 'to' prima della persona a cui si spiega qualcosa.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"Of course! Which word would you like me to explain?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to mean\",\n      \"translation_it\": \"significare\",\n      \"example\": \"What does this word mean?\"\n    }\n  ],\n  \"follow_up\": \"Tell me the word you are thinking about.\"\n}",
+   "tokens": 190,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "Can you explain this word to me?",
+    "corrections": [
+     {
+      "original": "explain me this word",
+      "corrected": "explain this word to me",
+      "explanation_it": "In inglese il verbo 'explain' richiede la preposizione 'to' prima della persona a cui si spiega qualcosa.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "Of course! Which word would you like me to explain?",
+    "new_vocab": [
+     {
+      "term": "to mean",
+      "translation_it": "significare",
+      "example": "What does this word mean?"
+     }
+    ],
+    "follow_up": "Tell me the word you are thinking about."
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e09": {
+   "key": "9eec19049502",
+   "sec": 2.46,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I look forward to seeing you.\",\n  \"corrections\": [\n    {\n      \"original\": \"to see\",\n      \"corrected\": \"to seeing\",\n      \"explanation_it\": \"Dopo l'espressione 'look forward to', si usa sempre la forma in -ing perché 'to' è una preposizione.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is a very common mistake, but don't worry! I am also looking forward to our conversation.\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to look forward to\",\n      \"translation_it\": \"non vedere l'ora di\",\n      \"example\": \"I look forward to meeting you next week.\"\n    }\n  ],\n  \"follow_up\": \"Can you try to use 'look forward to' in a new sentence about your weekend?\"\n}",
+   "tokens": 216,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I look forward to seeing you.",
+    "corrections": [
+     {
+      "original": "to see",
+      "corrected": "to seeing",
+      "explanation_it": "Dopo l'espressione 'look forward to', si usa sempre la forma in -ing perché 'to' è una preposizione.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a very common mistake, but don't worry! I am also looking forward to our conversation.",
+    "new_vocab": [
+     {
+      "term": "to look forward to",
+      "translation_it": "non vedere l'ora di",
+      "example": "I look forward to meeting you next week."
+     }
+    ],
+    "follow_up": "Can you try to use 'look forward to' in a new sentence about your weekend?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e10": {
+   "key": "e1ae98a2dda1",
+   "sec": 2.52,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I am very bored today.\",\n  \"corrections\": [\n    {\n      \"original\": \"boring\",\n      \"corrected\": \"bored\",\n      \"explanation_it\": \"Usa 'bored' per descrivere come ti senti (noioso/annoiato). 'Boring' significa che tu sei una persona noiosa.\",\n      \"type\": \"vocab\"\n    }\n  ],\n  \"reply\": \"Oh, I am sorry to hear that. Why are you feeling bored today?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to be fed up with\",\n      \"translation_it\": \"essere stufo di\",\n      \"example\": \"I am fed up with this rainy weather.\"\n    }\n  ],\n  \"follow_up\": \"What do you usually do when you are bored?\"\n}",
+   "tokens": 206,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I am very bored today.",
+    "corrections": [
+     {
+      "original": "boring",
+      "corrected": "bored",
+      "explanation_it": "Usa 'bored' per descrivere come ti senti (noioso/annoiato). 'Boring' significa che tu sei una persona noiosa.",
+      "type": "vocab"
+     }
+    ],
+    "reply": "Oh, I am sorry to hear that. Why are you feeling bored today?",
+    "new_vocab": [
+     {
+      "term": "to be fed up with",
+      "translation_it": "essere stufo di",
+      "example": "I am fed up with this rainy weather."
+     }
+    ],
+    "follow_up": "What do you usually do when you are bored?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e11": {
+   "key": "6e217242f309",
+   "sec": 2.32,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I have been here since Monday.\",\n  \"corrections\": [\n    {\n      \"original\": \"I am here since Monday\",\n      \"corrected\": \"I have been here since Monday\",\n      \"explanation_it\": \"In inglese, quando un'azione è iniziata nel passato e continua nel presente, si usa il Present Perfect (have been) invece del Present Simple.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"Oh, so you have been there for a few days now! How is your trip going so far?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"so far\",\n      \"translation_it\": \"finora\",\n      \"example\": \"How is your holiday going so far?\"\n    }\n  ],\n  \"follow_up\": \"Are you traveling for work or for pleasure?\"\n}",
+   "tokens": 210,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I have been here since Monday.",
+    "corrections": [
+     {
+      "original": "I am here since Monday",
+      "corrected": "I have been here since Monday",
+      "explanation_it": "In inglese, quando un'azione è iniziata nel passato e continua nel presente, si usa il Present Perfect (have been) invece del Present Simple.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "Oh, so you have been there for a few days now! How is your trip going so far?",
+    "new_vocab": [
+     {
+      "term": "so far",
+      "translation_it": "finora",
+      "example": "How is your holiday going so far?"
+     }
+    ],
+    "follow_up": "Are you traveling for work or for pleasure?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e12": {
+   "key": "d86e759f4b07",
+   "sec": 3.23,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"He told me that he was tired.\",\n  \"corrections\": [\n    {\n      \"original\": \"said me\",\n      \"corrected\": \"told me\",\n      \"explanation_it\": \"In inglese si usa 'tell' quando c'è un oggetto indiretto (me, you, him), mentre 'say' si usa per riportare le parole senza specificare subito a chi.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"I understand. It is common to confuse say and tell. Did he say why he was so tired?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to tell a story\",\n      \"translation_it\": \"raccontare una storia\",\n      \"example\": \"Can you tell me a story?\"\n    }\n  ],\n  \"follow_up\": \"Can you try to use 'told' in a new sentence?\"\n}",
+   "tokens": 222,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "He told me that he was tired.",
+    "corrections": [
+     {
+      "original": "said me",
+      "corrected": "told me",
+      "explanation_it": "In inglese si usa 'tell' quando c'è un oggetto indiretto (me, you, him), mentre 'say' si usa per riportare le parole senza specificare subito a chi.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "I understand. It is common to confuse say and tell. Did he say why he was so tired?",
+    "new_vocab": [
+     {
+      "term": "to tell a story",
+      "translation_it": "raccontare una storia",
+      "example": "Can you tell me a story?"
+     }
+    ],
+    "follow_up": "Can you try to use 'told' in a new sentence?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e13": {
+   "key": "9551e289d693",
+   "sec": 2.59,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"We discussed the project yesterday.\",\n  \"corrections\": [\n    {\n      \"original\": \"discussed about\",\n      \"corrected\": \"discussed\",\n      \"explanation_it\": \"In inglese il verbo 'discuss' è transitivo e non richiede la preposizione 'about'. Si dice 'discuss something'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds interesting. What was the main topic of your discussion?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to bring up\",\n      \"translation_it\": \"accennare / sollevare un argomento\",\n      \"example\": \"I want to bring up the budget during the meeting.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me one thing you decided during the meeting?\"\n}",
+   "tokens": 202,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "We discussed the project yesterday.",
+    "corrections": [
+     {
+      "original": "discussed about",
+      "corrected": "discussed",
+      "explanation_it": "In inglese il verbo 'discuss' è transitivo e non richiede la preposizione 'about'. Si dice 'discuss something'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds interesting. What was the main topic of your discussion?",
+    "new_vocab": [
+     {
+      "term": "to bring up",
+      "translation_it": "accennare / sollevare un argomento",
+      "example": "I want to bring up the budget during the meeting."
+     }
+    ],
+    "follow_up": "Can you tell me one thing you decided during the meeting?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e14": {
+   "key": "ae3b360b7cbe",
+   "sec": 2.52,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I'm going home now.\",\n  \"corrections\": [\n    {\n      \"original\": \"going to home\",\n      \"corrected\": \"going home\",\n      \"explanation_it\": \"In inglese non si usa la preposizione 'to' con la parola 'home' quando si usa con verbi di movimento come 'go'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds good. Are you going home to relax or do you have some work to do?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to head home\",\n      \"translation_it\": \"andare verso casa\",\n      \"example\": \"I am tired, so I think I will head home now.\"\n    }\n  ],\n  \"follow_up\": \"What are you going to do when you get home?\"\n}",
+   "tokens": 211,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I'm going home now.",
+    "corrections": [
+     {
+      "original": "going to home",
+      "corrected": "going home",
+      "explanation_it": "In inglese non si usa la preposizione 'to' con la parola 'home' quando si usa con verbi di movimento come 'go'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds good. Are you going home to relax or do you have some work to do?",
+    "new_vocab": [
+     {
+      "term": "to head home",
+      "translation_it": "andare verso casa",
+      "example": "I am tired, so I think I will head home now."
+     }
+    ],
+    "follow_up": "What are you going to do when you get home?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e15": {
+   "key": "0a46881b5389",
+   "sec": 2.32,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"My sister is taller than me.\",\n  \"corrections\": [\n    {\n      \"original\": \"more tall\",\n      \"corrected\": \"taller\",\n      \"explanation_it\": \"Con gli aggettivi brevi di una sillaba come 'tall', si aggiunge il suffisso '-er' per fare il comparativo, non si usa 'more'.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That is a very common mistake, but don't worry! How tall is your sister?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"short\",\n      \"translation_it\": \"basso/a\",\n      \"example\": \"I am much shorter than my brother.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me how tall you are?\"\n}",
+   "tokens": 207,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "My sister is taller than me.",
+    "corrections": [
+     {
+      "original": "more tall",
+      "corrected": "taller",
+      "explanation_it": "Con gli aggettivi brevi di una sillaba come 'tall', si aggiunge il suffisso '-er' per fare il comparativo, non si usa 'more'.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That is a very common mistake, but don't worry! How tall is your sister?",
+    "new_vocab": [
+     {
+      "term": "short",
+      "translation_it": "basso/a",
+      "example": "I am much shorter than my brother."
+     }
+    ],
+    "follow_up": "Can you tell me how tall you are?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e16": {
+   "key": "da05d19807f8",
+   "sec": 2.22,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I ate pizza last night.\",\n  \"corrections\": [\n    {\n      \"original\": \"have eated\",\n      \"corrected\": \"ate\",\n      \"explanation_it\": \"Il passato di 'eat' è irregolare: 'ate'. Inoltre, con un riferimento temporale specifico come 'last night', si usa il Past Simple e non il Present Perfect.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds delicious! What kind of pizza did you have?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"delicious\",\n      \"translation_it\": \"delizioso\",\n      \"example\": \"The pizza was delicious.\"\n    }\n  ],\n  \"follow_up\": \"Tell me, what is your favorite topping on a pizza?\"\n}",
+   "tokens": 199,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I ate pizza last night.",
+    "corrections": [
+     {
+      "original": "have eated",
+      "corrected": "ate",
+      "explanation_it": "Il passato di 'eat' è irregolare: 'ate'. Inoltre, con un riferimento temporale specifico come 'last night', si usa il Past Simple e non il Present Perfect.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds delicious! What kind of pizza did you have?",
+    "new_vocab": [
+     {
+      "term": "delicious",
+      "translation_it": "delizioso",
+      "example": "The pizza was delicious."
+     }
+    ],
+    "follow_up": "Tell me, what is your favorite topping on a pizza?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e17": {
+   "key": "34970e2978ce",
+   "sec": 2.36,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"How many people were at the party?\",\n  \"corrections\": [\n    {\n      \"original\": \"How much\",\n      \"corrected\": \"How many\",\n      \"explanation_it\": \"Si usa 'how many' per i nomi numerabili come 'people', mentre 'how much' si usa per i nomi non numerabili.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds like a fun question. I am not sure, but I bet it was a great party. Was it a big celebration?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"crowded\",\n      \"translation_it\": \"affollato\",\n      \"example\": \"The party was very crowded.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me about the last party you attended?\"\n}",
+   "tokens": 209,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "How many people were at the party?",
+    "corrections": [
+     {
+      "original": "How much",
+      "corrected": "How many",
+      "explanation_it": "Si usa 'how many' per i nomi numerabili come 'people', mentre 'how much' si usa per i nomi non numerabili.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds like a fun question. I am not sure, but I bet it was a great party. Was it a big celebration?",
+    "new_vocab": [
+     {
+      "term": "crowded",
+      "translation_it": "affollato",
+      "example": "The party was very crowded."
+     }
+    ],
+    "follow_up": "Can you tell me about the last party you attended?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e18": {
+   "key": "7d193efce71d",
+   "sec": 2.52,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I must finish this work today.\",\n  \"corrections\": [\n    {\n      \"original\": \"must to finish\",\n      \"corrected\": \"must finish\",\n      \"explanation_it\": \"Dopo il verbo modale 'must' non si usa mai il 'to'. Si usa direttamente la forma base del verbo.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds like a busy day. Do you have a lot of tasks to complete?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to be busy\",\n      \"translation_it\": \"essere impegnato\",\n      \"example\": \"I am very busy with my new project.\"\n    },\n    {\n      \"term\": \"deadline\",\n      \"translation_it\": \"scadenza\",\n      \"example\": \"The deadline for this work is today.\"\n    }\n  ],\n  \"follow_up\": \"What kind of work do you do?\"\n}",
+   "tokens": 236,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I must finish this work today.",
+    "corrections": [
+     {
+      "original": "must to finish",
+      "corrected": "must finish",
+      "explanation_it": "Dopo il verbo modale 'must' non si usa mai il 'to'. Si usa direttamente la forma base del verbo.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds like a busy day. Do you have a lot of tasks to complete?",
+    "new_vocab": [
+     {
+      "term": "to be busy",
+      "translation_it": "essere impegnato",
+      "example": "I am very busy with my new project."
+     },
+     {
+      "term": "deadline",
+      "translation_it": "scadenza",
+      "example": "The deadline for this work is today."
+     }
+    ],
+    "follow_up": "What kind of work do you do?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e19": {
+   "key": "41b7d21af52c",
+   "sec": 2.29,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"Last year I visited London.\",\n  \"corrections\": [\n    {\n      \"original\": \"I have visited\",\n      \"corrected\": \"I visited\",\n      \"explanation_it\": \"Quando specifichi un momento preciso nel passato (come 'last year'), devi usare il Past Simple invece del Present Perfect.\",\n      \"type\": \"grammar\"\n    }\n  ],\n  \"reply\": \"That sounds lovely! How long did you stay in London?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to go sightseeing\",\n      \"translation_it\": \"fare il turista / vedere i monumenti\",\n      \"example\": \"I went sightseeing in London last year.\"\n    }\n  ],\n  \"follow_up\": \"What was your favorite place in London?\"\n}",
+   "tokens": 193,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "Last year I visited London.",
+    "corrections": [
+     {
+      "original": "I have visited",
+      "corrected": "I visited",
+      "explanation_it": "Quando specifichi un momento preciso nel passato (come 'last year'), devi usare il Past Simple invece del Present Perfect.",
+      "type": "grammar"
+     }
+    ],
+    "reply": "That sounds lovely! How long did you stay in London?",
+    "new_vocab": [
+     {
+      "term": "to go sightseeing",
+      "translation_it": "fare il turista / vedere i monumenti",
+      "example": "I went sightseeing in London last year."
+     }
+    ],
+    "follow_up": "What was your favorite place in London?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "e20": {
+   "key": "0022e3e6c6ba",
+   "sec": 2.81,
+   "raw": "{\n  \"is_correct\": false,\n  \"corrected_sentence\": \"I made a mistake in the exam.\",\n  \"corrections\": [\n    {\n      \"original\": \"did a mistake\",\n      \"corrected\": \"made a mistake\",\n      \"explanation_it\": \"In inglese si usa il verbo 'make' con la parola 'mistake', non il verbo 'do'.\",\n      \"type\": \"vocab\"\n    }\n  ],\n  \"reply\": \"Oh, I am sorry to hear that. Don't worry, everyone makes mistakes sometimes. What subject was the exam about?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to pass an exam\",\n      \"translation_it\": \"superare un esame\",\n      \"example\": \"I hope you pass the exam next time.\"\n    },\n    {\n      \"term\": \"to fail an exam\",\n      \"translation_it\": \"essere bocciati a un esame\",\n      \"example\": \"He was sad because he failed the exam.\"\n    }\n  ],\n  \"follow_up\": \"Was it a difficult exam?\"\n}",
+   "tokens": 255,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": false,
+    "corrected_sentence": "I made a mistake in the exam.",
+    "corrections": [
+     {
+      "original": "did a mistake",
+      "corrected": "made a mistake",
+      "explanation_it": "In inglese si usa il verbo 'make' con la parola 'mistake', non il verbo 'do'.",
+      "type": "vocab"
+     }
+    ],
+    "reply": "Oh, I am sorry to hear that. Don't worry, everyone makes mistakes sometimes. What subject was the exam about?",
+    "new_vocab": [
+     {
+      "term": "to pass an exam",
+      "translation_it": "superare un esame",
+      "example": "I hope you pass the exam next time."
+     },
+     {
+      "term": "to fail an exam",
+      "translation_it": "essere bocciati a un esame",
+      "example": "He was sad because he failed the exam."
+     }
+    ],
+    "follow_up": "Was it a difficult exam?"
+   },
+   "score": {
+    "explanation_it": true,
+    "speakable": true,
+    "detected": true,
+    "pass": true
+   }
+  },
+  "c01": {
+   "key": "d2d0d515da1d",
+   "sec": 1.55,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"I usually go to work by bus.\",\n  \"corrections\": [],\n  \"reply\": \"That is a good way to travel. Do you have a lot of time to read or listen to music on the bus?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"commute\",\n      \"translation_it\": \"fare il tragitto casa-lavoro\",\n      \"example\": \"How long is your commute by bus?\"\n    }\n  ],\n  \"follow_up\": \"How long does your bus journey take?\"\n}",
+   "tokens": 139,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "I usually go to work by bus.",
+    "corrections": [],
+    "reply": "That is a good way to travel. Do you have a lot of time to read or listen to music on the bus?",
+    "new_vocab": [
+     {
+      "term": "commute",
+      "translation_it": "fare il tragitto casa-lavoro",
+      "example": "How long is your commute by bus?"
+     }
+    ],
+    "follow_up": "How long does your bus journey take?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c02": {
+   "key": "01a98725876b",
+   "sec": 1.62,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"We have been studying English for two years.\",\n  \"corrections\": [],\n  \"reply\": \"That is great! You have already made a lot of progress. How do you usually practice your English?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to make progress\",\n      \"translation_it\": \"fare progressi\",\n      \"example\": \"You are making great progress with your English!\"\n    }\n  ],\n  \"follow_up\": \"Do you study with a teacher or by yourself?\"\n}",
+   "tokens": 135,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "We have been studying English for two years.",
+    "corrections": [],
+    "reply": "That is great! You have already made a lot of progress. How do you usually practice your English?",
+    "new_vocab": [
+     {
+      "term": "to make progress",
+      "translation_it": "fare progressi",
+      "example": "You are making great progress with your English!"
+     }
+    ],
+    "follow_up": "Do you study with a teacher or by yourself?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c03": {
+   "key": "a278de2b79e0",
+   "sec": 1.6,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"She doesn't like spicy food.\",\n  \"corrections\": [],\n  \"reply\": \"That is a perfect sentence. Do you like spicy food or do you prefer mild flavors?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"mild\",\n      \"translation_it\": \"leggero, non piccante\",\n      \"example\": \"I prefer mild salsa instead of hot sauce.\"\n    }\n  ],\n  \"follow_up\": \"Tell me about your favorite dish.\"\n}",
+   "tokens": 130,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "She doesn't like spicy food.",
+    "corrections": [],
+    "reply": "That is a perfect sentence. Do you like spicy food or do you prefer mild flavors?",
+    "new_vocab": [
+     {
+      "term": "mild",
+      "translation_it": "leggero, non piccante",
+      "example": "I prefer mild salsa instead of hot sauce."
+     }
+    ],
+    "follow_up": "Tell me about your favorite dish."
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c04": {
+   "key": "5b74bfe2888c",
+   "sec": 1.39,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"Could you tell me where the station is?\",\n  \"corrections\": [],\n  \"reply\": \"Of course! I can help you with that. Are you looking for the train station or the bus station?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to look for\",\n      \"translation_it\": \"cercare\",\n      \"example\": \"I am looking for the nearest pharmacy.\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me which station you are looking for?\"\n}",
+   "tokens": 136,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "Could you tell me where the station is?",
+    "corrections": [],
+    "reply": "Of course! I can help you with that. Are you looking for the train station or the bus station?",
+    "new_vocab": [
+     {
+      "term": "to look for",
+      "translation_it": "cercare",
+      "example": "I am looking for the nearest pharmacy."
+     }
+    ],
+    "follow_up": "Can you tell me which station you are looking for?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c05": {
+   "key": "ed1d347924e6",
+   "sec": 1.41,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"I'm looking forward to meeting your family.\",\n  \"corrections\": [],\n  \"reply\": \"That is a very nice thing to say! Do you have any plans for the weekend?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to look forward to\",\n      \"translation_it\": \"non vedere l'ora di\",\n      \"example\": \"I am looking forward to our next lesson.\"\n    }\n  ],\n  \"follow_up\": \"\"\n}",
+   "tokens": 127,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "I'm looking forward to meeting your family.",
+    "corrections": [],
+    "reply": "That is a very nice thing to say! Do you have any plans for the weekend?",
+    "new_vocab": [
+     {
+      "term": "to look forward to",
+      "translation_it": "non vedere l'ora di",
+      "example": "I am looking forward to our next lesson."
+     }
+    ],
+    "follow_up": ""
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c06": {
+   "key": "689cd5964a6c",
+   "sec": 1.5,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"Yesterday I went to the market with my brother.\",\n  \"corrections\": [],\n  \"reply\": \"That sounds like a nice day. What did you buy at the market?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"grocery shopping\",\n      \"translation_it\": \"fare la spesa\",\n      \"example\": \"I need to go grocery shopping for the weekend.\"\n    }\n  ],\n  \"follow_up\": \"Did you buy any fresh fruit or vegetables?\"\n}",
+   "tokens": 130,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "Yesterday I went to the market with my brother.",
+    "corrections": [],
+    "reply": "That sounds like a nice day. What did you buy at the market?",
+    "new_vocab": [
+     {
+      "term": "grocery shopping",
+      "translation_it": "fare la spesa",
+      "example": "I need to go grocery shopping for the weekend."
+     }
+    ],
+    "follow_up": "Did you buy any fresh fruit or vegetables?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c07": {
+   "key": "08396da81b44",
+   "sec": 1.61,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"i went to milan last week and it was great\",\n  \"corrections\": [],\n  \"reply\": \"That sounds wonderful! What was your favorite thing to do in Milan?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"sightseeing\",\n      \"translation_it\": \"fare il turista / visitare monumenti\",\n      \"example\": \"I went sightseeing in Milan all day.\"\n    }\n  ],\n  \"follow_up\": \"Did you visit the Duomo or go shopping?\"\n}",
+   "tokens": 133,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "i went to milan last week and it was great",
+    "corrections": [],
+    "reply": "That sounds wonderful! What was your favorite thing to do in Milan?",
+    "new_vocab": [
+     {
+      "term": "sightseeing",
+      "translation_it": "fare il turista / visitare monumenti",
+      "example": "I went sightseeing in Milan all day."
+     }
+    ],
+    "follow_up": "Did you visit the Duomo or go shopping?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  },
+  "c08": {
+   "key": "6ec86096eaeb",
+   "sec": 1.97,
+   "raw": "{\n  \"is_correct\": true,\n  \"corrected_sentence\": \"what time does the train leave\",\n  \"corrections\": [],\n  \"reply\": \"That is a perfect question. Are you planning a trip by train soon?\",\n  \"new_vocab\": [\n    {\n      \"term\": \"to depart\",\n      \"translation_it\": \"partire\",\n      \"example\": \"The train is scheduled to depart at ten o'clock.\"\n    },\n    {\n      \"term\": \"platform\",\n      \"translation_it\": \"binario\",\n      \"example\": \"Which platform does the train leave from?\"\n    }\n  ],\n  \"follow_up\": \"Can you tell me what time your next train leaves?\"\n}",
+   "tokens": 168,
+   "finish": "stop",
+   "reasoning_chars": 0,
+   "valid": true,
+   "out": {
+    "is_correct": true,
+    "corrected_sentence": "what time does the train leave",
+    "corrections": [],
+    "reply": "That is a perfect question. Are you planning a trip by train soon?",
+    "new_vocab": [
+     {
+      "term": "to depart",
+      "translation_it": "partire",
+      "example": "The train is scheduled to depart at ten o'clock."
+     },
+     {
+      "term": "platform",
+      "translation_it": "binario",
+      "example": "Which platform does the train leave from?"
+     }
+    ],
+    "follow_up": "Can you tell me what time your next train leaves?"
+   },
+   "score": {
+    "explanation_it": null,
+    "speakable": true,
+    "false_positive": false,
+    "pass": true
+   }
+  }
+ }
+}

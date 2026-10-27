@@ -1,0 +1,7 @@
+# Dipendenze senza mlx-whisper (per Linux/Docker: usa STT_BACKEND=openai)
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic>=2
+httpx
+python-dotenv
