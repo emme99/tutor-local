@@ -42,13 +42,23 @@ Per lo sviluppo con ricarica automatica usa invece i due comandi qui sotto. **Do
 ### Sviluppo
 
 ```bash
-cp .env.example .env              # imposta LLM_BASE_URL/LLM_MODEL con il vincitore; TTS_BASE_URL=http://localhost:5050/v1 per la voce
+cp .env.example .env              # imposta LLM_BASE_URL/LLM_MODEL con il vincitore e la configurazione TTS qui sotto
 cd backend && uvicorn app.main:app --port 8010 --reload
 # in un altro terminale:
 cd frontend && npm install && npm run dev      # http://localhost:5173
 ```
-Alla prima richiesta vocale Whisper scarica il modello. Se non vedi l'audio della risposta, controlla `TTS_BASE_URL`:
-(il tuo `openai-macos-stt-tts` ascolta sulla 5050; l'app gli passa `voice` e `language`, quindi la voce inglese dipende dalle voci di sistema installate e dal mapping in `config.py` del servizio). Senza, l'app risponde solo con il testo (il TTS è facoltativo e non blocca il turno se fallisce).
+Alla prima richiesta vocale Whisper scarica il modello. Il TTS usa il servizio locale `openai-macos-stt-tts`, basato sulle voci di sistema di macOS tramite `say`, avviato separatamente sulla porta 5050. Nel `.env` del servizio abilita HTTP (`USE_HTTP=True`); in tutor-local imposta le voci macOS configurate nel servizio:
+
+```dotenv
+TTS_BASE_URL=http://127.0.0.1:5050/v1
+TTS_API_KEY=local
+TTS_MODEL=tts-1
+TTS_VOICE_IT=alloy
+TTS_VOICE_EN=ash
+TTS_FORMAT=mp3
+```
+
+`TTS_VOICE_IT` e `TTS_VOICE_EN` sono i nomi delle voci macOS mappati dal servizio, non file audio: verifica che le voci corrispondenti siano installate. Il backend invia la lingua a ogni sintesi, incluse le citazioni inglesi nelle spiegazioni italiane. MP3 richiede `ffmpeg`, già necessario al backend. Senza `TTS_BASE_URL` l'app risponde solo con il testo; se il TTS fallisce il turno non viene interrotto.
 
 ## Interfaccia
 
@@ -58,6 +68,9 @@ Barra laterale con le opzioni e chat a destra (tema chiaro/scuro automatico; sot
 
 - **Stop automatico al silenzio** (VAD a energia, nel browser): la registrazione si ferma dopo una pausa regolabile (1,5 / 2,5 / 4 s).
 - **Conversazione continua**: finito il tutor, riparte l'ascolto da solo.
+- **Spiegazioni vocali**: attiva «Leggi le spiegazioni in italiano» nelle opzioni di ascolto per sentirle dopo la risposta del tutor.
+- **Aiuto contestuale**: apri «Chiedi in italiano» dalla barra superiore per scrivere o pronunciare una domanda. Il tutor risponde in italiano in un pannello laterale separato, usando il dialogo come contesto senza interrompere né modificare la pratica.
+- **Risposta suggerita**: il tutor propone una possibile risposta alla sua ultima domanda, così sai cosa dire per continuare il dialogo. Puoi ascoltarla e provarla; sulle frasi errate puoi anche ascoltare e ripetere la correzione.
 - Audio troppo breve o silenzioso non arriva a Whisper (evita le frasi inventate tipo «Thank you.»).
 
 ## Modalità
@@ -74,7 +87,7 @@ Barra laterale con le opzioni e chat a destra (tema chiaro/scuro automatico; sot
 2. ffmpeg converte a 16 kHz, Whisper trascrive (`stt` nei tempi).
 3. L'LLM riceve il prompt della modalità (`app/modes.py`) + gli ultimi turni e restituisce un JSON
    (`is_correct`, `corrected_sentence`, `corrections`, `reply`, `new_vocab`, `follow_up`). Se il JSON non è valido riprova una volta.
-4. Il TTS pronuncia `reply`. Errori e vocabolario vengono salvati in `data/tutor.db` (`/api/mistakes`, `/api/vocab`).
+4. Il TTS pronuncia `reply`. In conversazione e gioco di ruolo l'LLM fornisce anche `suggested_reply`, un esempio di risposta dell'allievo alla domanda successiva; la UI consente di ascoltarla e confrontare la ripetizione con Whisper. Errori e vocabolario vengono salvati in `data/tutor.db` (`/api/mistakes`, `/api/vocab`).
 
 Il prompt dice al modello che l'input è una **trascrizione automatica**: non deve correggere punteggiatura o maiuscole
 né inseguire errori di riconoscimento. I casi `c07`/`c08` del benchmark verificano proprio questo.
@@ -84,6 +97,7 @@ né inseguire errori di riconoscimento. I casi `c07`/`c08` del benchmark verific
 - **Latenza**: oggi una risposta arriva intera. Il passo successivo è lo streaming (WebSocket): far partire il TTS sul
   `reply` mentre il modello genera ancora le correzioni.
 - **Pronuncia**: non è valutata. Gemma non l'ha giudicata in modo affidabile nei test; serve un modulo fonemico separato.
+- Il confronto Whisper con la risposta suggerita aiuta a individuare parole omesse o diverse, ma non valuta i singoli suoni o l'accento.
 - **Clip lunghe**: Whisper le gestisce; i modelli audio-nativi con limite di 30 s no.
 - **Memoria**: gli errori sono salvati ma ancora non influenzano le sessioni successive (ripasso, livello adattivo).
 - **Thinking**: se il modello ragiona prima di rispondere la latenza esplode; disattivalo con `LLM_EXTRA_BODY` se il server lo permette.

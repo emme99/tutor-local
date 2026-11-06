@@ -12,8 +12,9 @@ from pydantic import BaseModel, ValidationError
 from . import memory, orchestrator
 from .config import settings
 from .jsonparse import NotJSON
-from .providers import llm, tts
-from .schemas import TurnResponse
+from .pronunciation import compare_transcript
+from .providers import llm, stt, tts
+from .schemas import HelpResponse, PronunciationCheck, TurnResponse
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="tutor-local")
@@ -30,7 +31,7 @@ async def health():
 @app.post("/api/turn", response_model=TurnResponse)
 async def turn(session_id: str = Form(...), mode: str = Form("conversation"), level: str = Form("B1"),
                spoken_lang: str = Form("en"), text: str | None = Form(None),
-               speak: bool = Form(True), audio: UploadFile | None = File(None)):
+               speak: bool = Form(True), speak_explanations: bool = Form(False), audio: UploadFile | None = File(None)):
     if mode not in ("conversation", "translate", "scenario") or spoken_lang not in ("en", "it"):
         raise HTTPException(400, "mode o spoken_lang non validi")
     data = await audio.read() if audio else None
@@ -38,7 +39,8 @@ async def turn(session_id: str = Form(...), mode: str = Form("conversation"), le
     try:
         return await orchestrator.run_turn(session_id=session_id, mode=mode, level=level,
                                            spoken_lang=spoken_lang, text=text, audio=data,
-                                           audio_suffix=suffix, speak=speak)
+                                           audio_suffix=suffix, speak=speak,
+                                           speak_explanations=speak_explanations)
     except orchestrator.EmptyInput as e:
         raise HTTPException(400, str(e)) from e
     except httpx.ConnectError as e:
@@ -47,6 +49,26 @@ async def turn(session_id: str = Form(...), mode: str = Form("conversation"), le
         raise HTTPException(502, f"LLM ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
     except (NotJSON, ValidationError) as e:
         raise HTTPException(502, f"Il modello non ha prodotto il JSON atteso: {e}") from e
+    except RuntimeError as e:
+        raise HTTPException(500, str(e)) from e
+
+
+@app.post("/api/help", response_model=HelpResponse)
+async def contextual_help(session_id: str = Form(...), text: str | None = Form(None),
+                          audio: UploadFile | None = File(None)):
+    if not (text and text.strip()) and not audio:
+        raise HTTPException(400, "serve una domanda in italiano")
+    data = await audio.read() if audio else None
+    suffix = Path(audio.filename or "help.webm").suffix or ".webm" if audio else ".webm"
+    try:
+        return await orchestrator.contextual_help(session_id=session_id, text=text,
+                                                  audio=data, audio_suffix=suffix)
+    except orchestrator.EmptyInput as e:
+        raise HTTPException(400, str(e)) from e
+    except httpx.ConnectError as e:
+        raise HTTPException(502, f"LLM non raggiungibile su {settings.llm_base_url}: avvia Ollama/LM Studio") from e
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(502, f"LLM ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
     except RuntimeError as e:
         raise HTTPException(500, str(e)) from e
 
@@ -102,6 +124,20 @@ async def speak(body: SpeakIn):
         raise HTTPException(502, "il TTS non ha prodotto audio")
     import base64
     return {"audio_b64": base64.b64encode(res[0]).decode(), "audio_mime": res[1]}
+
+
+@app.post("/api/pronunciation-check", response_model=PronunciationCheck)
+async def pronunciation_check(target: str = Form(...), audio: UploadFile = File(...)):
+    """Confronta la trascrizione di una ripetizione con la frase inglese attesa."""
+    if not target.strip() or len(target) > 500:
+        raise HTTPException(400, "frase attesa non valida")
+    data = await audio.read()
+    suffix = Path(audio.filename or "turn.webm").suffix or ".webm"
+    try:
+        transcript = await stt.transcribe(data, "en", suffix)
+    except RuntimeError as e:
+        raise HTTPException(500, str(e)) from e
+    return compare_transcript(target, transcript)
 
 
 # Frontend compilato (npm run build): se presente viene servito qui, quindi basta un solo processo e Node non serve a runtime.

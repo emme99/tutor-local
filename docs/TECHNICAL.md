@@ -24,7 +24,7 @@ sequenceDiagram
   participant A as FastAPI (orchestrator)
   participant S as Whisper (MLX, in-process)
   participant L as LLM (Ollama / Splash)
-  participant T as TTS (openai-macos-stt-tts)
+  participant T as TTS (openai-macos-stt-tts, macOS say)
   B->>B: MediaRecorder + VAD (stop al silenzio)
   B->>A: POST /api/turn (audio webm, modalità, livello)
   A->>A: ffmpeg → WAV 16 kHz; scarta audio breve/silenzioso
@@ -44,7 +44,7 @@ sequenceDiagram
 | Orchestrator | FastAPI + uvicorn (Python ≥ 3.11) | Processo locale, porta 8010 | Serve anche il frontend compilato |
 | STT | `mlx-whisper`, `whisper-large-v3-turbo` | In-process nel backend (GPU Apple) | Alternativa: endpoint OpenAI-compatible |
 | LLM | Gemma 4 26B-A4B (Ollama) — alternativa Qwen3.6-35B-A3B (Splash) | Server separato | `LLM_BASE_URL`, `LLM_MODEL` |
-| TTS | `openai-macos-stt-tts` (comando `say` di macOS) | Server separato, porta 5050 | Facoltativo |
+| TTS | `openai-macos-stt-tts` basato su `say` e voci macOS | Servizio locale separato, porta 5050 | Facoltativo; voce selezionata separatamente per IT/EN |
 | Memoria | SQLite (`data/tutor.db`) | File locale | Turni, errori, vocabolario |
 
 Tempi misurati nell'app (turno tipico, Gemma 26B-A4B): **STT ≈ 0,55 s · LLM ≈ 0,9-1,1 s · TTS ≈ 1,0 s → ≈ 2,6 s** dalla fine
@@ -95,11 +95,15 @@ run.sh                        avvio in un solo processo
 4. **LLM**: `llm.tutor_reply` → `chat/completions` non in streaming, con `response_format: json_object` (se `LLM_JSON_MODE=1`)
    e `reasoning_effort: "none"`. Parsing con `extract_json` (toglie `<think>…</think>`, code fence, testo attorno) e validazione
    Pydantic. Se fallisce: **un** retry con «Reply again with ONLY the JSON object»; se la risposta era troncata
-   (`finish_reason == "length"`) l'errore dice che probabilmente il thinking è attivo.
+  (`finish_reason == "length"`) l'errore dice che probabilmente il thinking è attivo. Il JSON include `suggested_reply`, un esempio conciso di risposta dell'allievo alla domanda successiva.
 5. **Normalizzazione**: `tutor.is_correct = not tutor.corrections`. Il modello a volte mette `is_correct=false` senza correzioni
    (2 casi su 48 nei test): per l'allievo conta solo ciò che viene mostrato.
 6. **TTS** (se `speak` e `TTS_BASE_URL`): si pronuncia `reply` + `follow_up` (in conversazione e scenario; in traduzione il
-   `follow_up` è una nota in italiano e non si legge). Un errore del TTS non fa fallire il turno (log + risposta senza audio).
+  `follow_up` è una nota in italiano e non si legge). Se `speak_explanations` è attivo, le spiegazioni vengono segmentate:
+  testo italiano con `language=it`, contenuto tra virgolette con `language=en`; le clip sono riprodotte in sequenza dopo la risposta. `providers/tts.py` invia `model`,
+  `input`, `voice`, `language` e `response_format` all'endpoint OpenAI-compatible `/audio/speech`. `openai-macos-stt-tts`
+  mappa `voice` alle voci di sistema disponibili e usa `language` (`it`/`en`) per la sintesi con `say`. Un errore del TTS non
+  fa fallire il turno (log + risposta senza audio).
 7. **Persistenza** e risposta (`TurnResponse`).
 
 ## 5. API HTTP
@@ -109,9 +113,11 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 | Metodo | Percorso | Corpo | Risposta |
 |---|---|---|---|
 | GET | `/api/health` | — | `{llm:{base_url,model}, stt_model, tts_enabled}` |
-| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true) | `TurnResponse` |
+| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false) | `TurnResponse` |
 | POST | `/api/translate` | JSON `{text, target:"it"\|"en"}` | `{translation}` (non salva nulla) |
+| POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano) | `HelpResponse` (risposta italiana, audio e timings; non persistita) |
 | POST | `/api/speak` | JSON `{text, lang}` | `{audio_b64, audio_mime}` |
+| POST | `/api/pronunciation-check` | `multipart/form-data`: `target` (frase inglese attesa), `audio` (registrazione) | `PronunciationCheck` |
 | GET | `/api/vocab` | — | elenco `{term, translation_it, example, first_seen, seen}` |
 | GET | `/api/mistakes` | — | elenco `{ts, session, original, corrected, type, explanation_it}` |
 
@@ -123,10 +129,12 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
   "tutor": {
     "is_correct": true, "corrected_sentence": "…",
     "corrections": [{"original":"…","corrected":"…","explanation_it":"…","type":"grammar"}],
-    "reply": "That sounds wonderful!", "new_vocab": [{"term":"…","translation_it":"…","example":"…"}],
+    "reply": "That sounds wonderful!", "suggested_reply": "I had a relaxing day, thanks!",
+    "new_vocab": [{"term":"…","translation_it":"…","example":"…"}],
     "follow_up": "What was your favourite place?"
   },
   "audio_b64": "…", "audio_mime": "audio/mpeg",
+  "explanations_audio_segments": [],
   "timings": {"stt": 0.55, "llm": 0.98, "llm_tok_s": 64.7, "tts": 1.05}
 }
 ```
@@ -134,6 +142,10 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 Errori: `400` input non valido o nulla da trascrivere; `502` LLM/TTS non raggiungibile, risposta HTTP non valida o JSON non
 conforme; `500` problemi locali (ffmpeg assente, STT mal configurato). Il messaggio è in `detail` e il frontend lo mostra.
 `llm_tok_s` = token generati / tempo LLM totale (include il prefill: sottostima la velocità pura).
+
+`POST /api/pronunciation-check` trascrive la registrazione in inglese con STT e allinea le parole riconosciute alla frase attesa. La risposta contiene `transcript`, `matched_words`, `total_words` e i gruppi di parole attese/riconosciute diversi. È un confronto lessicale automatico, non una valutazione fonetica o dell'accento.
+
+`POST /api/help` trascrive l'eventuale audio forzando l'italiano, passa gli ultimi turni `conversation` al LLM come contesto e sintetizza la risposta in italiano. Il turno di aiuto non viene salvato in SQLite e non cambia modalità, sessione o cronologia di pratica.
 
 ## 6. Modello dati (SQLite, `DB_PATH`, default `data/tutor.db`)
 
@@ -149,14 +161,15 @@ ancora usati per il ripasso (§15).
 
 ### 7.1 Schema (stesso per tutte le modalità: un solo parser)
 `is_correct`, `corrected_sentence`, `corrections[]` (`original`, `corrected`, `explanation_it`, `type` ∈ grammar | vocab |
-preposition | word_order | false_friend | other), `reply`, `new_vocab[]` (`term`, `translation_it`, `example`), `follow_up`.
+preposition | word_order | false_friend | other), `reply`, `suggested_reply`, `new_vocab[]` (`term`, `translation_it`, `example`), `follow_up`.
 
 ### 7.2 Modalità (`modes.py`)
 - **conversation**: tutor di inglese per un italiano adulto al livello CEFR scelto. Regole chiave: correggere solo errori
   reali; **l'input è una trascrizione automatica** (non correggere punteggiatura/maiuscole, ignorare errori di riconoscimento);
   se l'allievo parla italiano o chiede «come si dice» non è un errore: dare la frase inglese e chiedere di ripeterla; restare
   nel ruolo di tutor; `corrected_sentence` deve applicare tutte le correzioni; la risposta (parlata) è di 1-3 frasi, senza
-  elenchi/markdown e senza ripetere le spiegazioni, che sono a schermo; spiegazioni in italiano; max 2 vocaboli nuovi.
+  elenchi/markdown e senza ripetere le spiegazioni, che sono a schermo; `suggested_reply` è un esempio breve di risposta
+  dell'allievo alla domanda più recente, non una frase pronunciata dal tutor; spiegazioni in italiano; max 2 vocaboli nuovi.
 - **scenario**: come conversation + `SCENARIO_EXTRA`. *Preparazione*: 4-6 frasi utili in `new_vocab` (`term` = frase inglese,
   `translation_it`, `example` = alternativa/risposta probabile) e una `reply` che presenta la situazione e propone il gioco di
   ruolo. *Gioco di ruolo*: il tutor recita l'altra persona (es. receptionist), risposte brevi, corregge gli errori. `max_tokens`
@@ -168,6 +181,7 @@ preposition | word_order | false_friend | other), `reply`, `new_vocab[]` (`term`
 ### 7.3 Regola d'oro quando si tocca un prompt
 Qualsiasi modifica a `CONVERSATION`/`SCHEMA` cambia l'impronta (hash) dei risultati del benchmark: i vecchi risultati vengono
 rieseguiti e il report segnala «⚠ risultati con prompt diverso». Dopo ogni modifica rilancia `llm_bench` (set base + `cases_hard.json`).
+L'aggiunta di `suggested_reply` cambia prompt e schema: i risultati precedenti non misurano la qualità dei suggerimenti e vanno rigenerati prima di confrontare modelli.
 
 ## 8. Configurazione (variabili d'ambiente / `.env`)
 
@@ -185,10 +199,19 @@ rieseguiti e il report segnala «⚠ risultati con prompt diverso». Dopo ogni m
 | `STT_BASE_URL`, `STT_API_KEY`, `STT_API_MODEL` | — / `local` / `whisper-1` | Backend `openai` |
 | `STT_INITIAL_PROMPT` | vuoto | Vocabolario di contesto per Whisper (es. termini tecnici) |
 | `AUDIO_MIN_SECONDS`, `AUDIO_MIN_RMS` | `0.4`, `0.004` | Filtro anti-silenzio prima di Whisper |
-| `TTS_BASE_URL` | vuoto | Es. `http://localhost:5050/v1`. Vuoto = nessun audio |
-| `TTS_MODEL`, `TTS_VOICE_EN`, `TTS_VOICE_IT`, `TTS_FORMAT` | `tts-1`, `alloy`, `alloy`, `mp3` | Il servizio mappa le voci OpenAI su voci macOS e accetta `language` |
+| `TTS_BASE_URL` | vuoto | URL base del servizio locale, es. `http://127.0.0.1:5050/v1`. Vuoto = nessun audio |
+| `TTS_API_KEY` | `local` | Token inviato come Bearer; il servizio locale non lo usa per autenticarsi |
+| `TTS_MODEL` | `tts-1` | Campo richiesto dal protocollo; il servizio `say` lo accetta per compatibilità |
+| `TTS_VOICE_IT`, `TTS_VOICE_EN` | `alloy`, `alloy` | Nomi delle voci configurate/mappate dal servizio; devono corrispondere a voci macOS installate |
+| `TTS_FORMAT` | `mp3` | `mp3` (richiede ffmpeg) oppure `wav` |
 | `DB_PATH` | `data/tutor.db` | |
 | `HISTORY_TURNS` | `6` | Turni passati all'LLM |
+
+### Servizio TTS locale
+
+Il provider TTS di tutor-local è compatibile con il servizio locale `openai-macos-stt-tts`: non richiede modifiche applicative. Avvia il servizio sulla stessa macchina, abilita HTTP nel suo `.env` (`USE_HTTP=True`) e configura `TTS_BASE_URL` in tutor-local. `TTS_VOICE_IT` e `TTS_VOICE_EN` selezionano le voci mappate dal servizio; installa in macOS voci appropriate per entrambe le lingue. Non è necessario caricare un modello neurale o campioni WAV.
+
+Il servizio usa `say` di macOS, quindi deve restare sull'host Mac e non può essere eseguito in un container Linux. Mantenerlo raggiungibile solo in locale: non espone autenticazione.
 
 ## 9. Frontend
 
@@ -208,6 +231,8 @@ rieseguiti e il report segnala «⚠ risultati con prompt diverso». Dopo ogni m
 - **Conversazione continua**: a fine riproduzione del tutor riparte la registrazione; un errore o «Nuova sessione» la interrompe.
 - **Aiuti per l'ascolto**: «Ascolta di nuovo», «Traduci» (`/api/translate`), «Solo ascolto» (testo nascosto finché non si clicca),
   🔊 per ogni frase suggerita nello scenario (`/api/speak`).
+- **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il confronto misura le parole riconosciute, non la qualità fonetica.
+- **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica.
 - Il frontend mostra la «frase corretta» solo se ci sono correzioni.
 
 ## 10. Benchmark e registro delle decisioni
@@ -269,8 +294,9 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
 | Errore 502 «LLM non raggiungibile» | Server spento o URL sbagliato | Avviare Ollama/Splash; verificare `LLM_BASE_URL` |
 | 400 «non ho sentito nulla» | Audio troppo breve/silenzioso | Parlare più vicino al microfono; abbassare `AUDIO_MIN_RMS` se il microfono è debole |
 | La registrazione si ferma a metà frase | Pausa più lunga della soglia del VAD | Selezionare «4 s» o disattivare lo stop automatico |
-| Nessuna voce del tutor | `TTS_BASE_URL` vuoto o servizio spento | Impostare l'URL (porta 5050); nel `.env` del servizio `USE_HTTP=True` per http |
-| Voce inglese con pronuncia italiana | Il TTS usa la voce sbagliata | Verificare il parametro `language` e le voci inglesi installate in macOS |
+| Nessuna voce del tutor | `TTS_BASE_URL` vuoto o servizio spento | Avviare `openai-macos-stt-tts` sulla porta 5050, abilitare `USE_HTTP=True` e verificare `TTS_BASE_URL` |
+| Il servizio usa una voce inattesa | Voce non installata o nome non mappato | Verificare la mappatura in `openai-macos-stt-tts` e le voci disponibili in macOS |
+| Voce inglese con pronuncia italiana | Voce inglese errata o parametro lingua non passato | Verificare `TTS_VOICE_EN`, la voce macOS associata e `language=en` nella richiesta |
 | «ffmpeg non trovato» | Dipendenza di sistema | `brew install ffmpeg` |
 | Dopo un aggiornamento l'interfaccia non cambia | Il backend (porta 8010) serve una vecchia `frontend/dist` | `./run.sh` (ricompila da solo) oppure `cd frontend && npm run build`; la «build …» in fondo alla barra laterale dice quale versione gira |
 | Microfono negato | Permessi del browser/OS | Consentire il microfono (serve `localhost` o HTTPS) |
@@ -283,11 +309,11 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
 **B) Un solo processo** (consigliato per l'uso quotidiano): `./run.sh`. Compila il frontend se manca la build o se i sorgenti sono
 più recenti (`npm run build`) e il backend lo serve da `/`; Node non serve più a runtime. Si apre `http://127.0.0.1:8010`.
 
-**C) Docker — analisi.** Su Mac un container è una VM Linux **senza accesso a Metal**: Whisper-MLX, Ollama/Splash e il TTS basato su
-`say` non possono girare dentro. Dentro il container può stare solo l'orchestrator con il frontend; STT, LLM e TTS restano
+**C) Docker — analisi.** Su Mac un container è una VM Linux: Whisper-MLX non può usare Metal e il TTS basato su `say` non è disponibile
+nel container. Dentro il container può stare l'orchestrator con il frontend; STT, LLM e TTS restano
 sull'host e si raggiungono via `host.docker.internal`. Poiché lo STT oggi è in-process (MLX), serve `STT_BACKEND=openai` verso un
-server STT sull'host: **oggi non ce n'è uno con Whisper su Metal** (il servizio `openai-macos-stt-tts` usa Apple Speech, risultato
-peggiore nei test). Conclusione: su Mac Docker aggiunge complessità senza benefici. Ha senso su **Linux con GPU NVIDIA**
+server STT sull'host: **oggi non ce n'è uno con Whisper su Metal**. Il servizio TTS `say` deve rimanere sull'host Mac; il
+container può puntare a `http://host.docker.internal:5050/v1`. Conclusione: su Mac Docker aggiunge complessità senza benefici. Ha senso su **Linux con GPU NVIDIA**
 (faster-whisper + Ollama in container) o per un server domestico condiviso. `deploy/Dockerfile` e `deploy/docker-compose.yml`
 sono bozze **non testate**: orchestrator + UI, `STT_BACKEND=openai`, volume per il database, porta solo su localhost.
 
@@ -308,9 +334,7 @@ usare «Installa come app/aggiungi al Dock» (comportamento da verificare), più
 
 ## 15. Limiti noti e roadmap (in ordine di valore)
 
-1. **Valutazione della pronuncia**: oggi assente. Gemma non è affidabile (0/8). Strada: modello fonemico (es. wav2vec2 per
-   fonemi) + forced alignment sul testo atteso, e LLM solo per spiegare. Modalità **shadowing**: il tutor dice una frase,
-   l'allievo la ripete, l'app confronta trascrizione e frase attesa.
+1. **Valutazione fonetica della pronuncia**: la ripetizione guidata confronta già la trascrizione Whisper con la frase attesa, ma non valuta i singoli fonemi o l'accento. Per quello serve un modello fonemico (es. wav2vec2 per fonemi) e forced alignment; l'LLM può poi spiegare gli errori.
 2. **Streaming** (WebSocket): far partire il TTS sulla `reply` mentre l'LLM genera ancora le correzioni; con ≈ 2,6 s di latenza
    attuale è secondario.
 3. **Ripasso e memoria**: usare `mistakes` e `vocab` (ripetizione dilazionata, errori ricorrenti nel prompt, livello adattivo).

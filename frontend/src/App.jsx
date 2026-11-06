@@ -11,6 +11,12 @@ export default function App() {
   const [autoStop, setAutoStop] = useState(true);
   const [pauseMs, setPauseMs] = useState(2500);
   const [continuous, setContinuous] = useState(false);
+  const [readExplanations, setReadExplanations] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpQuestion, setHelpQuestion] = useState("");
+  const [helpBusy, setHelpBusy] = useState(false);
+  const [helpRecording, setHelpRecording] = useState(false);
+  const [helpError, setHelpError] = useState("");
   const [micLevel, setMicLevel] = useState(0);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -21,30 +27,52 @@ export default function App() {
   const [revealed, setRevealed] = useState({});
   const [translations, setTranslations] = useState({});
   const [sideOpen, setSideOpen] = useState(false);
+  const [practice, setPractice] = useState(null);
+  const [helpResult, setHelpResult] = useState(null);
 
   const recorder = useRef(null);
   const chunks = useRef([]);
   const player = useRef(null);
   const stopVad = useRef(null);
+  const practiceRecorder = useRef(null);
+  const practiceChunks = useRef([]);
+  const stopPracticeVad = useRef(null);
+  const helpRecorder = useRef(null);
+  const helpChunks = useRef([]);
+  const stopHelpVad = useRef(null);
+  const discardHelpRecording = useRef(false);
   const listRef = useRef(null);
   // Le callback asincrone (fine registrazione, fine audio) leggono sempre le impostazioni correnti da qui.
   const cfg = useRef({});
-  cfg.current = { session, mode, level, lang, autoStop, pauseMs, continuous };
+  cfg.current = { session, mode, level, lang, autoStop, pauseMs, continuous, readExplanations };
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, busy]);
 
   function play(t, onEnd) {
-    if (!t.audio_b64) {
+    const clips = [
+      t.audio_b64 && { audio_b64: t.audio_b64, audio_mime: t.audio_mime },
+      ...(t.explanations_audio_segments || []),
+    ].filter(Boolean);
+    if (!clips.length) {
       onEnd?.();
       return;
     }
     player.current?.pause();
-    const a = new Audio(`data:${t.audio_mime};base64,${t.audio_b64}`);
-    player.current = a;
-    if (onEnd) a.onended = onEnd;
-    a.play().catch(() => onEnd?.());
+    let index = 0;
+    const playNext = () => {
+      if (index >= clips.length) {
+        onEnd?.();
+        return;
+      }
+      const clip = clips[index++];
+      const a = new Audio(`data:${clip.audio_mime};base64,${clip.audio_b64}`);
+      player.current = a;
+      a.onended = playNext;
+      a.play().catch(playNext);
+    };
+    playNext();
   }
 
   async function submit(form) {
@@ -52,10 +80,11 @@ export default function App() {
     setBusy(true);
     setError("");
     form.append("session_id", c.session);
-    form.append("mode", c.mode);
-    form.append("level", c.level);
-    form.append("spoken_lang", c.lang);
     try {
+      form.append("mode", c.mode);
+      form.append("level", c.level);
+      form.append("spoken_lang", c.lang);
+      form.append("speak_explanations", c.readExplanations);
       const r = await fetch("/api/turn", { method: "POST", body: form });
       if (!r.ok) {
         let msg = r.statusText;
@@ -131,8 +160,77 @@ export default function App() {
     }
   }
 
+  function openPractice(turnId, target) {
+    player.current?.pause();
+    setPractice({ turnId, target, recording: false, loading: false, result: null, error: "" });
+    speakPhrase(target);
+  }
+
+  async function startPracticeRecording() {
+    if (!practice || practiceRecorder.current?.state === "recording") return;
+    const { turnId, target } = practice;
+    player.current?.pause();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+      const mr = new MediaRecorder(stream);
+      practiceChunks.current = [];
+      mr.ondataavailable = (e) => e.data.size && practiceChunks.current.push(e.data);
+      mr.onstop = async () => {
+        stopPracticeVad.current?.();
+        stopPracticeVad.current = null;
+        stream.getTracks().forEach((track) => track.stop());
+        setPractice((current) => current?.turnId === turnId
+          ? { ...current, recording: false, loading: true, error: "", result: null }
+          : current);
+        const form = new FormData();
+        form.append("target", target);
+        form.append("audio", new Blob(practiceChunks.current, { type: mr.mimeType }), "practice.webm");
+        try {
+          const response = await fetch("/api/pronunciation-check", { method: "POST", body: form });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || response.statusText);
+          setPractice((current) => current?.turnId === turnId
+            ? { ...current, loading: false, result: data }
+            : current);
+        } catch (e) {
+          setPractice((current) => current?.turnId === turnId
+            ? { ...current, loading: false, error: String(e.message || e) }
+            : current);
+        }
+      };
+      mr.start();
+      practiceRecorder.current = mr;
+      setPractice((current) => current?.turnId === turnId
+        ? { ...current, recording: true, loading: false, result: null, error: "" }
+        : current);
+      if (cfg.current.autoStop) {
+        stopPracticeVad.current = startVAD(stream, {
+          silenceMs: cfg.current.pauseMs,
+          onLevel: () => {},
+          onStop: () => mr.state === "recording" && mr.stop(),
+        });
+      }
+    } catch (e) {
+      setPractice((current) => current?.turnId === turnId
+        ? { ...current, error: "Microfono non disponibile: " + e.message }
+        : current);
+    }
+  }
+
+  function togglePracticeRecording() {
+    if (practiceRecorder.current?.state === "recording") practiceRecorder.current.stop();
+    else startPracticeRecording();
+  }
+
   function newSession() {
     setContinuous(false);
+    closeHelp();
+    setHelpQuestion("");
+    setHelpResult(null);
+    if (practiceRecorder.current?.state === "recording") practiceRecorder.current.stop();
+    setPractice(null);
     setSession(crypto.randomUUID());
     setTurns([]);
     setTranslations({});
@@ -163,6 +261,91 @@ export default function App() {
     form.append("text", text);
     setText("");
     submit(form);
+  }
+
+  async function submitHelp(form) {
+    setHelpBusy(true);
+    setHelpError("");
+    setHelpResult(null);
+    form.append("session_id", cfg.current.session);
+    try {
+      const response = await fetch("/api/help", { method: "POST", body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || response.statusText);
+      setHelpResult(data);
+      setHelpQuestion("");
+      if (data.audio_b64) play(data);
+    } catch (e) {
+      setHelpError(String(e.message || e));
+    } finally {
+      setHelpBusy(false);
+    }
+  }
+
+  function sendHelpText(e) {
+    e.preventDefault();
+    if (!helpQuestion.trim() || helpBusy) return;
+    const form = new FormData();
+    form.append("text", helpQuestion);
+    submitHelp(form);
+  }
+
+  async function startHelpRecording() {
+    if (helpRecorder.current?.state === "recording" || helpBusy) return;
+    player.current?.pause();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+      const mr = new MediaRecorder(stream);
+      helpChunks.current = [];
+      mr.ondataavailable = (e) => e.data.size && helpChunks.current.push(e.data);
+      mr.onstop = () => {
+        stopHelpVad.current?.();
+        stopHelpVad.current = null;
+        stream.getTracks().forEach((track) => track.stop());
+        setHelpRecording(false);
+        if (discardHelpRecording.current) {
+          discardHelpRecording.current = false;
+          return;
+        }
+        const form = new FormData();
+        form.append("audio", new Blob(helpChunks.current, { type: mr.mimeType }), "help.webm");
+        submitHelp(form);
+      };
+      mr.start();
+      helpRecorder.current = mr;
+      setHelpRecording(true);
+      if (cfg.current.autoStop) {
+        stopHelpVad.current = startVAD(stream, {
+          silenceMs: cfg.current.pauseMs,
+          onLevel: () => {},
+          onStop: () => mr.state === "recording" && mr.stop(),
+        });
+      }
+    } catch (e) {
+      setHelpError("Microfono non disponibile: " + e.message);
+    }
+  }
+
+  function toggleHelpRecording() {
+    if (helpRecorder.current?.state === "recording") helpRecorder.current.stop();
+    else startHelpRecording();
+  }
+
+  function openHelp() {
+    setContinuous(false);
+    setHelpOpen(true);
+  }
+
+  function closeHelp() {
+    if (helpRecorder.current?.state === "recording") {
+      discardHelpRecording.current = true;
+      stopHelpVad.current?.();
+      stopHelpVad.current = null;
+      helpRecorder.current.stop();
+    }
+    setHelpOpen(false);
   }
 
   const modeLabel = { conversation: "Conversazione", scenario: "Scenario", translate: "Traduzione" }[mode];
@@ -228,6 +411,10 @@ export default function App() {
             <input type="checkbox" checked={hideText} onChange={(e) => setHideText(e.target.checked)} />
             Solo ascolto (nascondi il testo del tutor)
           </label>
+          <label className="check">
+            <input type="checkbox" checked={readExplanations} onChange={(e) => setReadExplanations(e.target.checked)} disabled={mode === "translate"} />
+            Leggi le spiegazioni in italiano
+          </label>
         </div>
 
         <button type="button" className="ghost" onClick={() => { newSession(); setSideOpen(false); }}>
@@ -245,6 +432,9 @@ export default function App() {
           <span className="muted small">
             {mode === "translate" ? (lang === "it" ? "italiano → inglese" : "inglese → italiano") : `livello ${level}`}
           </span>
+          <button type="button" className="ghost help-trigger" onClick={openHelp} aria-expanded={helpOpen} aria-controls="contextual-help">
+            Chiedi in italiano
+          </button>
         </header>
 
         <div className="messages" ref={listRef}>
@@ -264,13 +454,21 @@ export default function App() {
                   <div className="stack">
                     {showFix && (
                       <div className="note">
-                        {t.tutor.corrected_sentence && <div className="fix">✎ {t.tutor.corrected_sentence}</div>}
+                        {t.tutor.corrected_sentence && (
+                          <div className="fix-line">
+                            <div className="fix">✎ {t.tutor.corrected_sentence}</div>
+                            <button type="button" className="ghost" onClick={() => openPractice(t.id, t.tutor.corrected_sentence)} disabled={busy || recording || practice?.recording}>
+                              🔊 Ascolta frase corretta
+                            </button>
+                          </div>
+                        )}
                         {t.tutor.corrections.map((c, j) => (
                           <div key={j} className="corr">
                             <b>{c.original}</b> → <b>{c.corrected}</b>
                             <span> {c.explanation_it}</span>
                           </div>
                         ))}
+
                       </div>
                     )}
 
@@ -282,6 +480,47 @@ export default function App() {
                         </>
                       )}
                     </div>
+
+                    {t.mode !== "translate" && t.tutor.suggested_reply && (
+                      <div className="suggested-reply">
+                        <div><b>Puoi rispondere:</b> {t.tutor.suggested_reply}</div>
+                        <button type="button" className="ghost" onClick={() => openPractice(t.id, t.tutor.suggested_reply)} disabled={busy || recording || practice?.recording}>
+                          🔊 Ascolta e prova a rispondere
+                        </button>
+                      </div>
+                    )}
+
+                    {practice?.turnId === t.id && (
+                      <div className="practice">
+                        <div className="practice-target"><b>Obiettivo:</b> {practice.target}</div>
+                        <div className="actions">
+                          <button type="button" className="ghost" onClick={() => speakPhrase(practice.target)} disabled={practice.recording || practice.loading}>
+                            🔊 Ascolta modello
+                          </button>
+                          <button type="button" className={practice.recording ? "rec on" : "rec"} onClick={togglePracticeRecording} disabled={busy || recording || practice.loading}>
+                            {practice.recording ? "■ Termina tentativo" : "● Registra ripetizione"}
+                          </button>
+                        </div>
+                        {practice.recording && <p className="muted small">Ti ascolto… {autoStop ? `stop dopo ${pauseMs / 1000} s di silenzio.` : "premi Termina tentativo quando hai finito."}</p>}
+                        {practice.loading && <p className="muted small">Confronto la frase…</p>}
+                        {practice.error && <p className="practice-error">{practice.error}</p>}
+                        {practice.result && (
+                          <div className="practice-result">
+                            <b>Parole riconosciute: {practice.result.matched_words}/{practice.result.total_words}</b>
+                            {practice.result.transcript
+                              ? <p>Ho sentito: {practice.result.transcript}</p>
+                              : <p>Non ho riconosciuto parlato: riprova con la frase completa.</p>}
+                            {practice.result.differences.map((difference, index) => (
+                              <p key={index}>
+                                Atteso: <b>{difference.expected.join(" ") || "(nessuna parola)"}</b>
+                                {" · "}Riconosciuto: <b>{difference.recognized.join(" ") || "(omesso)"}</b>
+                              </p>
+                            ))}
+                            <p className="muted small">Confronto automatico della trascrizione, non una valutazione fonetica dei singoli suoni.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {translations[t.id] && <div className="translation">🇮🇹 {translations[t.id]}</div>}
 
@@ -308,7 +547,7 @@ export default function App() {
                     )}
 
                     <div className="actions">
-                      {t.audio_b64 && <button type="button" className="ghost" onClick={() => play(t)}>🔊 Ascolta di nuovo</button>}
+                      {(t.audio_b64 || t.explanations_audio_segments?.length > 0) && <button type="button" className="ghost" onClick={() => play(t)}>🔊 Ascolta di nuovo</button>}
                       <button type="button" className="ghost" onClick={() => translate(t)}>🇮🇹 Traduci</button>
                       <span className="timings">
                         {Object.entries(t.timings).map(([k, v]) => `${k} ${v}${k.includes("tok") ? "" : " s"}`).join(" · ")}
@@ -352,6 +591,43 @@ export default function App() {
           <div className="status">Ti ascolto… mi fermo dopo {pauseMs / 1000} s di silenzio.</div>
         )}
       </main>
+
+      {helpOpen && (
+        <div className="help-scrim" onMouseDown={(event) => event.target === event.currentTarget && closeHelp()}>
+          <aside className="help-panel" id="contextual-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
+            <header className="help-header">
+              <div>
+                <h2 id="help-title">Chiedi in italiano</h2>
+                <p className="muted small">L'aiuto resta qui e non interrompe la conversazione inglese.</p>
+              </div>
+              <button type="button" className="ghost" onClick={closeHelp} aria-label="Chiudi aiuto">×</button>
+            </header>
+
+            <div className="help-thread" aria-live="polite">
+              {!helpResult && !helpBusy && <p className="muted">Puoi chiedere una spiegazione grammaticale o come dire una frase.</p>}
+              {helpResult && (
+                <>
+                  <div className="help-question">{helpResult.question}</div>
+                  <div className="help-answer">{helpResult.answer}</div>
+                  {helpResult.audio_b64 && <button type="button" className="ghost" onClick={() => play(helpResult)}>🔊 Ascolta risposta</button>}
+                  <span className="timings">{Object.entries(helpResult.timings).map(([key, value]) => `${key} ${value} s`).join(" · ")}</span>
+                </>
+              )}
+              {helpBusy && <p className="muted">Preparo la spiegazione…</p>}
+            </div>
+
+            {helpError && <div className="error-bar">{helpError}</div>}
+            {helpRecording && <div className="status">Ti ascolto… {autoStop ? `stop dopo ${pauseMs / 1000} s di silenzio.` : "premi Stop per inviare."}</div>}
+            <form className="help-composer" onSubmit={sendHelpText}>
+              <button type="button" className={helpRecording ? "rec on" : "rec"} onClick={toggleHelpRecording} disabled={helpBusy} aria-label={helpRecording ? "Termina domanda vocale" : "Fai una domanda a voce"}>
+                {helpRecording ? "■ Stop" : "● Voce"}
+              </button>
+              <input value={helpQuestion} onChange={(event) => setHelpQuestion(event.target.value)} placeholder="Es.: Come si coniuga essere?" disabled={helpBusy || helpRecording} />
+              <button type="submit" className="send" disabled={helpBusy || helpRecording || !helpQuestion.trim()}>Chiedi</button>
+            </form>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
