@@ -3,6 +3,11 @@ import { startVAD } from "./vad.js";
 
 let nextId = 1;
 
+function reviewSpeechText(item) {
+  // Per gli errori si ascolta la forma corretta; per i vocaboli il termine inglese, non la traduzione.
+  return item?.kind === "mistake" ? item.answer : item.prompt;
+}
+
 export default function App() {
   const [session, setSession] = useState(() => crypto.randomUUID());
   const [mode, setMode] = useState("conversation");
@@ -29,18 +34,33 @@ export default function App() {
   const [sideOpen, setSideOpen] = useState(false);
   const [practice, setPractice] = useState(null);
   const [helpResult, setHelpResult] = useState(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [review, setReview] = useState(null);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewRevealed, setReviewRevealed] = useState(false);
+  const [reviewStats, setReviewStats] = useState({ due_count: 0, total: 0 });
+  const [summary, setSummary] = useState(null);
+  const [reviewAudioBusy, setReviewAudioBusy] = useState(false);
+  const [reviewPractice, setReviewPractice] = useState(null);
 
   const recorder = useRef(null);
   const chunks = useRef([]);
   const player = useRef(null);
   const stopVad = useRef(null);
+  const discardRecording = useRef(false);
   const practiceRecorder = useRef(null);
   const practiceChunks = useRef([]);
   const stopPracticeVad = useRef(null);
+  const discardPracticeRecording = useRef(false);
   const helpRecorder = useRef(null);
   const helpChunks = useRef([]);
   const stopHelpVad = useRef(null);
   const discardHelpRecording = useRef(false);
+  const reviewRecorder = useRef(null);
+  const reviewChunks = useRef([]);
+  const stopReviewVad = useRef(null);
+  const discardReviewRecording = useRef(false);
   const listRef = useRef(null);
   // Le callback asincrone (fine registrazione, fine audio) leggono sempre le impostazioni correnti da qui.
   const cfg = useRef({});
@@ -50,10 +70,24 @@ export default function App() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, busy]);
 
+  useEffect(() => {
+    refreshReviewStats();
+  }, []);
+
+  async function refreshReviewStats() {
+    try {
+      const response = await fetch("/api/review/stats");
+      if (response.ok) setReviewStats(await response.json());
+    } catch {
+      /* il badge non è essenziale: se il backend non risponde lo si aggiorna al prossimo turno */
+    }
+  }
+
   function play(t, onEnd) {
     const clips = [
       t.audio_b64 && { audio_b64: t.audio_b64, audio_mime: t.audio_mime },
       ...(t.explanations_audio_segments || []),
+      ...(t.audio_segments || []),
     ].filter(Boolean);
     if (!clips.length) {
       onEnd?.();
@@ -92,13 +126,17 @@ export default function App() {
         throw new Error(msg);
       }
       const data = await r.json();
+      if (cfg.current.session !== c.session) return; // sessione cambiata mentre la richiesta era in corso
       data.id = nextId++;
       setTurns((t) => [...t, data]);
+      refreshReviewStats();
       // In "conversazione continua" quando il tutor ha finito di parlare si riascolta da soli.
       play(data, cfg.current.continuous ? () => cfg.current.continuous && startRecording() : undefined);
     } catch (e) {
-      setError(String(e.message || e));
-      setContinuous(false); // un errore interrompe il ciclo automatico
+      if (cfg.current.session === c.session) {
+        setError(String(e.message || e));
+        setContinuous(false); // un errore interrompe il ciclo automatico
+      }
     } finally {
       setBusy(false);
     }
@@ -107,12 +145,14 @@ export default function App() {
   async function startRecording() {
     if (recorder.current?.state === "recording") return;
     player.current?.pause(); // niente voce del tutor nel microfono
+    player.current = null;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });
       const mr = new MediaRecorder(stream);
       chunks.current = [];
+      discardRecording.current = false;
       mr.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
       mr.onstop = () => {
         stopVad.current?.();
@@ -120,6 +160,9 @@ export default function App() {
         stream.getTracks().forEach((t) => t.stop());
         setRecording(false);
         setMicLevel(0);
+        const discarded = discardRecording.current;
+        discardRecording.current = false;
+        if (discarded) return;
         const form = new FormData();
         form.append("audio", new Blob(chunks.current, { type: mr.mimeType }), "turn.webm");
         submit(form);
@@ -176,11 +219,15 @@ export default function App() {
       });
       const mr = new MediaRecorder(stream);
       practiceChunks.current = [];
+      discardPracticeRecording.current = false;
       mr.ondataavailable = (e) => e.data.size && practiceChunks.current.push(e.data);
       mr.onstop = async () => {
         stopPracticeVad.current?.();
         stopPracticeVad.current = null;
         stream.getTracks().forEach((track) => track.stop());
+        const discarded = discardPracticeRecording.current;
+        discardPracticeRecording.current = false;
+        if (discarded) return;
         setPractice((current) => current?.turnId === turnId
           ? { ...current, recording: false, loading: true, error: "", result: null }
           : current);
@@ -229,13 +276,35 @@ export default function App() {
     closeHelp();
     setHelpQuestion("");
     setHelpResult(null);
-    if (practiceRecorder.current?.state === "recording") practiceRecorder.current.stop();
+    setReviewOpen(false);
+    setReview(null);
+    setReviewError("");
+    setReviewRevealed(false);
+    setSummary(null);
+    stopReviewRecording();
+    setReviewPractice(null);
+    setReviewAudioBusy(false);
+    if (recorder.current?.state === "recording") {
+      discardRecording.current = true;
+      stopVad.current?.();
+      stopVad.current = null;
+      recorder.current.stop();
+    }
+    player.current?.pause();
+    player.current = null;
+    if (practiceRecorder.current?.state === "recording") {
+      discardPracticeRecording.current = true;
+      stopPracticeVad.current?.();
+      stopPracticeVad.current = null;
+      practiceRecorder.current.stop();
+    }
     setPractice(null);
     setSession(crypto.randomUUID());
     setTurns([]);
     setTranslations({});
     setRevealed({});
     setError("");
+    setBusy(false);
   }
 
   async function translate(t) {
@@ -335,6 +404,9 @@ export default function App() {
 
   function openHelp() {
     setContinuous(false);
+    setReviewOpen(false);
+    stopReviewRecording();
+    setReviewPractice(null);
     setHelpOpen(true);
   }
 
@@ -348,12 +420,176 @@ export default function App() {
     setHelpOpen(false);
   }
 
+  async function openReview() {
+    setContinuous(false);
+    closeHelp();
+    setReviewOpen(true);
+    setReviewBusy(true);
+    setReviewError("");
+    setReviewRevealed(false);
+    stopReviewRecording();
+    setReviewPractice(null);
+    setReviewAudioBusy(false);
+    const sid = cfg.current.session;
+    const summaryPromise = fetch(`/api/session/${encodeURIComponent(sid)}/summary`)
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
+    try {
+      const response = await fetch("/api/review/due?limit=10");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || response.statusText);
+      if (cfg.current.session !== sid) return;
+      setReview(data);
+      setReviewStats({ due_count: data.due_count, total: data.total });
+      const sessionSummary = await summaryPromise;
+      if (sessionSummary && cfg.current.session === sid) setSummary(sessionSummary);
+    } catch (e) {
+      if (cfg.current.session === sid) setReviewError(String(e.message || e));
+    } finally {
+      if (cfg.current.session === sid) setReviewBusy(false);
+    }
+  }
+
+  function closeReview() {
+    stopReviewRecording();
+    setReviewPractice(null);
+    setReviewOpen(false);
+  }
+
+  function stopReviewRecording(discard = true) {
+    if (reviewRecorder.current?.state === "recording") {
+      discardReviewRecording.current = discard;
+      stopReviewVad.current?.();
+      stopReviewVad.current = null;
+      reviewRecorder.current.stop();
+    }
+  }
+
+  async function speakReview(item) {
+    const text = reviewSpeechText(item);
+    if (!text || reviewAudioBusy) return;
+    setReviewAudioBusy(true);
+    setReviewError("");
+    try {
+      const response = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, lang: "en" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || response.statusText);
+      play({ audio_b64: data.audio_b64, audio_mime: data.audio_mime });
+    } catch (e) {
+      setReviewError(String(e.message || e));
+    } finally {
+      setReviewAudioBusy(false);
+    }
+  }
+
+  async function startReviewRecording() {
+    const item = review?.items?.[0];
+    if (!item || reviewRecorder.current?.state === "recording") return;
+    const target = reviewSpeechText(item);
+    if (!target) {
+      setReviewError("Questo elemento non ha una frase inglese da pronunciare.");
+      return;
+    }
+    player.current?.pause();
+    player.current = null;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+      const mr = new MediaRecorder(stream);
+      reviewChunks.current = [];
+      discardReviewRecording.current = false;
+      mr.ondataavailable = (e) => e.data.size && reviewChunks.current.push(e.data);
+      mr.onstop = async () => {
+        stopReviewVad.current?.();
+        stopReviewVad.current = null;
+        stream.getTracks().forEach((track) => track.stop());
+        const discarded = discardReviewRecording.current;
+        discardReviewRecording.current = false;
+        if (discarded) return;
+        setReviewPractice((current) => current?.itemId === item.id
+          ? { ...current, recording: false, loading: true, error: "", result: null }
+          : current);
+        const form = new FormData();
+        form.append("target", target);
+        form.append("audio", new Blob(reviewChunks.current, { type: mr.mimeType }), "review.webm");
+        try {
+          const response = await fetch("/api/pronunciation-check", { method: "POST", body: form });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || response.statusText);
+          setReviewPractice((current) => current?.itemId === item.id
+            ? { ...current, loading: false, result: data }
+            : current);
+        } catch (e) {
+          setReviewPractice((current) => current?.itemId === item.id
+            ? { ...current, loading: false, error: String(e.message || e) }
+            : current);
+        }
+      };
+      mr.start();
+      reviewRecorder.current = mr;
+      setReviewPractice({ itemId: item.id, target, recording: true, loading: false, result: null, error: "" });
+      if (cfg.current.autoStop) {
+        stopReviewVad.current = startVAD(stream, {
+          silenceMs: cfg.current.pauseMs,
+          onLevel: () => {},
+          onStop: () => mr.state === "recording" && mr.stop(),
+        });
+      }
+    } catch (e) {
+      setReviewPractice({
+        itemId: item.id, target, recording: false, loading: false, result: null,
+        error: "Microfono non disponibile: " + e.message,
+      });
+    }
+  }
+
+  function toggleReviewRecording() {
+    if (reviewRecorder.current?.state === "recording") reviewRecorder.current.stop();
+    else startReviewRecording();
+  }
+
+  async function gradeReview(result) {
+    const item = review?.items?.[0];
+    if (!item || reviewBusy) return;
+    stopReviewRecording();
+    setReviewPractice(null);
+    setReviewBusy(true);
+    setReviewError("");
+    try {
+      const response = await fetch("/api/review/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, result }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || response.statusText);
+      setReview((current) => current
+        ? { ...current, items: current.items.filter((entry) => entry.id !== item.id),
+            due_count: data.due_count, total: data.total }
+        : current);
+      setReviewStats({ due_count: data.due_count, total: data.total });
+      setReviewRevealed(false);
+    } catch (e) {
+      setReviewError(String(e.message || e));
+    } finally {
+      setReviewBusy(false);
+    }
+  }
+
   const modeLabel = { conversation: "Conversazione", scenario: "Scenario", translate: "Traduzione" }[mode];
   const hints = {
     conversation: "Premi ● Parla e dì qualcosa in inglese, per esempio «My name is…». Il tutor ti risponde e ti corregge.",
     scenario: "Descrivi in italiano una situazione, per esempio «Aiutami a presentarmi in albergo per avere una camera»: riceverai le frasi da dire e poi farete un gioco di ruolo.",
     translate: "Parla (o scrivi) nella lingua scelta a sinistra: il tutor traduce e pronuncia la traduzione.",
   };
+  const currentReview = review?.items?.[0];
+  const reviewAttempt = reviewPractice?.itemId === currentReview?.id ? reviewPractice : null;
+  const reviewListenLabel = currentReview?.kind === "mistake" ? "🔊 Ascolta frase corretta" : "🔊 Ascolta termine";
 
   return (
     <div className="app">
@@ -434,6 +670,9 @@ export default function App() {
           </span>
           <button type="button" className="ghost help-trigger" onClick={openHelp} aria-expanded={helpOpen} aria-controls="contextual-help">
             Chiedi in italiano
+          </button>
+          <button type="button" className="ghost" onClick={openReview} aria-expanded={reviewOpen} aria-controls="review-panel">
+            🔁 Ripasso{reviewStats.due_count > 0 ? ` (${reviewStats.due_count})` : ""}
           </button>
         </header>
 
@@ -609,7 +848,7 @@ export default function App() {
                 <>
                   <div className="help-question">{helpResult.question}</div>
                   <div className="help-answer">{helpResult.answer}</div>
-                  {helpResult.audio_b64 && <button type="button" className="ghost" onClick={() => play(helpResult)}>🔊 Ascolta risposta</button>}
+                  {(helpResult.audio_b64 || helpResult.audio_segments?.length > 0) && <button type="button" className="ghost" onClick={() => play(helpResult)}>🔊 Ascolta risposta</button>}
                   <span className="timings">{Object.entries(helpResult.timings).map(([key, value]) => `${key} ${value} s`).join(" · ")}</span>
                 </>
               )}
@@ -625,6 +864,115 @@ export default function App() {
               <input value={helpQuestion} onChange={(event) => setHelpQuestion(event.target.value)} placeholder="Es.: Come si coniuga essere?" disabled={helpBusy || helpRecording} />
               <button type="submit" className="send" disabled={helpBusy || helpRecording || !helpQuestion.trim()}>Chiedi</button>
             </form>
+          </aside>
+        </div>
+      )}
+
+      {reviewOpen && (
+        <div className="help-scrim" onMouseDown={(event) => event.target === event.currentTarget && closeReview()}>
+          <aside className="help-panel" id="review-panel" role="dialog" aria-modal="true" aria-labelledby="review-title">
+            <header className="help-header">
+              <div>
+                <h2 id="review-title">Ripasso</h2>
+                <p className="muted small">Errori e vocaboli tornano al momento giusto, senza interrompere la conversazione.</p>
+              </div>
+              <button type="button" className="ghost" onClick={closeReview} aria-label="Chiudi ripasso">×</button>
+            </header>
+
+            {reviewBusy && !review && <p className="muted">Carico il ripasso…</p>}
+            {reviewError && <div className="error-bar">{reviewError}</div>}
+
+            {review && !currentReview && (
+              <p className="muted">Nessun elemento in scadenza. Torna dopo qualche conversazione.</p>
+            )}
+
+            {currentReview && (
+              <div className="review-card">
+                <div className="muted small">
+                  {currentReview.kind === "mistake" ? "Errore da correggere" : "Vocabolario da ricordare"}
+                </div>
+                <div className="review-prompt">{currentReview.prompt}</div>
+                {!reviewRevealed ? (
+                  <button type="button" className="send" onClick={() => setReviewRevealed(true)} disabled={reviewBusy}>
+                    Mostra risposta
+                  </button>
+                ) : (
+                  <>
+                    <div className="review-answer">{currentReview.answer}</div>
+                    {currentReview.hint && <p className="muted">{currentReview.hint}</p>}
+                    <div className="actions review-actions">
+                      <button type="button" className="ghost" onClick={() => speakReview(currentReview)}
+                        disabled={reviewAudioBusy || reviewAttempt?.recording}>
+                        {reviewAudioBusy ? "Preparo audio…" : reviewListenLabel}
+                      </button>
+                      <button type="button" className={reviewAttempt?.recording ? "rec on" : "rec"}
+                        onClick={toggleReviewRecording} disabled={reviewAttempt?.loading || reviewAudioBusy}>
+                        {reviewAttempt?.recording ? "■ Termina" : "● Ripeti"}
+                      </button>
+                    </div>
+                    {reviewAttempt?.recording && (
+                      <p className="muted small">
+                        Ti ascolto… {autoStop ? `stop dopo ${pauseMs / 1000} s di silenzio.` : "premi Termina quando hai finito."}
+                      </p>
+                    )}
+                    {reviewAttempt?.loading && <p className="muted small">Confronto la pronuncia…</p>}
+                    {reviewAttempt?.error && <p className="practice-error">{reviewAttempt.error}</p>}
+                    {reviewAttempt?.result && (
+                      <div className="practice-result">
+                        <b>Parole riconosciute: {reviewAttempt.result.matched_words}/{reviewAttempt.result.total_words}</b>
+                        {reviewAttempt.result.transcript
+                          ? <p>Ho sentito: {reviewAttempt.result.transcript}</p>
+                          : <p>Non ho riconosciuto parlato: riprova con la frase completa.</p>}
+                        {reviewAttempt.result.differences.map((difference, index) => (
+                          <p key={index}>
+                            Atteso: <b>{difference.expected.join(" ") || "(nessuna parola)"}</b>
+                            {" · "}Riconosciuto: <b>{difference.recognized.join(" ") || "(omesso)"}</b>
+                          </p>
+                        ))}
+                        <p className="muted small">Confronto automatico della trascrizione, non una valutazione fonetica dei singoli suoni.</p>
+                      </div>
+                    )}
+                    <div className="grades">
+                      {[["Non ricordavo", 0], ["Difficile", 1], ["Bene", 2], ["Facile", 3]].map(([label, value]) => (
+                        <button key={value} type="button" className="ghost" onClick={() => gradeReview(value)} disabled={reviewBusy}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p className="muted small">In coda: {review.items.length} · totale {review.total}</p>
+              </div>
+            )}
+
+            {summary && summary.turns > 0 && (
+              <section className="review-summary">
+                <h3>Riepilogo sessione</h3>
+                <p className="muted small">
+                  {summary.turns} turni · {summary.corrections.length} correzioni · {summary.vocab.length} vocaboli
+                </p>
+                {summary.corrections.length > 0 && (
+                  <div>
+                    <b>Da rivedere</b>
+                    <ul>
+                      {summary.corrections.slice(0, 6).map((correction, index) => (
+                        <li key={index}>{correction.original} → {correction.corrected}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {summary.vocab.length > 0 && (
+                  <div>
+                    <b>Vocaboli</b>
+                    <ul>
+                      {summary.vocab.slice(0, 8).map((item, index) => (
+                        <li key={index}>{item.term} = {item.translation_it}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
           </aside>
         </div>
       )}

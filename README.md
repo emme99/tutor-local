@@ -3,9 +3,11 @@
 Whisper (STT) → LLM (tutor) → TTS, orchestrati da un backend FastAPI, con un frontend React minimale.
 Il progetto parte volutamente piccolo: un turno = una richiesta HTTP, poi si ottimizza.
 
+> **Sei uno studente?** Leggi [GUIDA-STUDENTE.md](GUIDA-STUDENTE.md): funzionalità, esempi d'uso e routine di studio.
+
 ```
-backend/    FastAPI: orchestrator, provider STT/LLM/TTS, memoria SQLite
-frontend/   React (Vite): registra, mostra correzioni e risposta, riproduce l'audio
+backend/    FastAPI: orchestrator, provider STT/LLM/TTS, memoria SQLite, suite pytest
+frontend/   React (Vite): registra, mostra correzioni e risposta, riproduce l'audio, ripasso
 llm_bench/  benchmark per scegliere il modello LLM sul compito reale del tutor
 ```
 
@@ -69,7 +71,7 @@ Barra laterale con le opzioni e chat a destra (tema chiaro/scuro automatico; sot
 - **Stop automatico al silenzio** (VAD a energia, nel browser): la registrazione si ferma dopo una pausa regolabile (1,5 / 2,5 / 4 s).
 - **Conversazione continua**: finito il tutor, riparte l'ascolto da solo.
 - **Spiegazioni vocali**: attiva «Leggi le spiegazioni in italiano» nelle opzioni di ascolto per sentirle dopo la risposta del tutor.
-- **Aiuto contestuale**: apri «Chiedi in italiano» dalla barra superiore per scrivere o pronunciare una domanda. Il tutor risponde in italiano in un pannello laterale separato, usando il dialogo come contesto senza interrompere né modificare la pratica.
+- **Aiuto contestuale**: apri «Chiedi in italiano» dalla barra superiore per scrivere o pronunciare una domanda. Il tutor risponde in italiano in un pannello laterale separato, usando il dialogo come contesto senza interrompere né modificare la pratica. Le frasi e le parole inglesi nella risposta vengono pronunciate con la voce inglese, le spiegazioni con quella italiana.
 - **Risposta suggerita**: il tutor propone una possibile risposta alla sua ultima domanda, così sai cosa dire per continuare il dialogo. Puoi ascoltarla e provarla; sulle frasi errate puoi anche ascoltare e ripetere la correzione.
 - Audio troppo breve o silenzioso non arriva a Whisper (evita le frasi inventate tipo «Thank you.»).
 
@@ -87,10 +89,33 @@ Barra laterale con le opzioni e chat a destra (tema chiaro/scuro automatico; sot
 2. ffmpeg converte a 16 kHz, Whisper trascrive (`stt` nei tempi).
 3. L'LLM riceve il prompt della modalità (`app/modes.py`) + gli ultimi turni e restituisce un JSON
    (`is_correct`, `corrected_sentence`, `corrections`, `reply`, `new_vocab`, `follow_up`). Se il JSON non è valido riprova una volta.
-4. Il TTS pronuncia `reply`. In conversazione e gioco di ruolo l'LLM fornisce anche `suggested_reply`, un esempio di risposta dell'allievo alla domanda successiva; la UI consente di ascoltarla e confrontare la ripetizione con Whisper. Errori e vocabolario vengono salvati in `data/tutor.db` (`/api/mistakes`, `/api/vocab`).
+4. Il TTS pronuncia `reply`. In conversazione e gioco di ruolo l'LLM fornisce anche `suggested_reply`, un esempio di risposta dell'allievo alla domanda successiva; la UI consente di ascoltarla e confrontare la ripetizione con Whisper. Errori e vocabolario vengono salvati in `data/tutor.db` (`/api/mistakes`, `/api/vocab`) e alimentano la coda di ripasso.
 
 Il prompt dice al modello che l'input è una **trascrizione automatica**: non deve correggere punteggiatura o maiuscole
 né inseguire errori di riconoscimento. I casi `c07`/`c08` del benchmark verificano proprio questo.
+
+## Ripasso e riepilogo
+
+- **🔁 Ripasso** (barra superiore): coda degli errori e dei vocaboli in scadenza, con quattro voti (Non ricordavo / Difficile /
+  Bene / Facile). La programmazione è una versione semplificata di SM-2: un errore appena sbagliato torna dopo circa 10 minuti,
+  mentre i voti positivi aumentano l'intervallo. Il badge mostra quanti elementi sono pronti.
+- Dopo la risposta puoi **ascoltare la pronuncia corretta** e **ripeterla**: il confronto con Whisper mostra le parole riconosciute
+  e le differenze. È un controllo lessicale, non fonetico, ma aiuta a distinguere un errore di forma da uno di pronuncia.
+- Gli elementi scaduti vengono richiamati anche nel prompt della conversazione (al massimo 3 errori e 3 vocaboli), solo quando
+  l'occasione è naturale: il tutor non trasforma il dialogo in un test. Il benchmark non riceve questo blocco.
+- Nello stesso pannello compare il **riepilogo della sessione**: turni, correzioni e vocaboli deduplicati, letto dai turni salvati.
+
+## Test
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest -q
+python -m ruff check app tests
+```
+
+La suite usa un database temporaneo e provider finti: non tocca `data/tutor.db` né i servizi reali.
 
 ## Limiti noti e prossimi passi
 
@@ -99,5 +124,5 @@ né inseguire errori di riconoscimento. I casi `c07`/`c08` del benchmark verific
 - **Pronuncia**: non è valutata. Gemma non l'ha giudicata in modo affidabile nei test; serve un modulo fonemico separato.
 - Il confronto Whisper con la risposta suggerita aiuta a individuare parole omesse o diverse, ma non valuta i singoli suoni o l'accento.
 - **Clip lunghe**: Whisper le gestisce; i modelli audio-nativi con limite di 30 s no.
-- **Memoria**: gli errori sono salvati ma ancora non influenzano le sessioni successive (ripasso, livello adattivo).
+- **Ripasso**: la coda e l'iniezione nel prompt sono attive; mancano livello adattivo e statistiche storiche.
 - **Thinking**: se il modello ragiona prima di rispondere la latenza esplode; disattivalo con `LLM_EXTRA_BODY` se il server lo permette.

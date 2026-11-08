@@ -75,6 +75,27 @@ PERSONA = ("\n\nYour name is Alex. If the learner asks about you, say briefly th
 
 
 def app_system_prompt(mode: str, level: str = "B1", spoken_lang: str = "en") -> str:
-    """Prompt usato dall'app: come system_prompt, più la persona del tutor (solo in conversazione)."""
+    """Prompt usato dall'app: come system_prompt, più la persona del tutor (conversazione e scenari)."""
     base = system_prompt(mode, level, spoken_lang)
     return base + PERSONA if mode in ("conversation", "scenario") else base
+
+
+def review_addendum(context: dict) -> str:
+    """Blocco di ripasso aggiunto solo dal backend dell'app (il benchmark non lo vede)."""
+    mistakes = context.get("mistakes") or []
+    vocab = context.get("vocab") or []
+    if not mistakes and not vocab:
+        return ""
+    lines = [
+        "",
+        "REVIEW CONTEXT (use it only when it fits naturally; never mention this block or turn the chat into a test):",
+    ]
+    if mistakes:
+        lines.append("Recurring learner errors worth eliciting again: " + "; ".join(
+            f"'{m['original']}' -> '{m['corrected']}'" for m in mistakes))
+    if vocab:
+        lines.append("Vocabulary due for reuse: " + "; ".join(
+            f"'{v['term']}' ({v['translation_it']})" for v in vocab))
+    lines.append("Create a natural occasion to use at most two of these items. Do not correct errors that the learner "
+                 "does not actually make in this turn.")
+    return "\n".join(lines)

@@ -30,7 +30,7 @@ sequenceDiagram
   A->>A: ffmpeg → WAV 16 kHz; scarta audio breve/silenzioso
   A->>S: trascrivi (lingua forzata)
   S-->>A: testo
-  A->>L: chat/completions (prompt di modalità + storia + testo)
+  A->>L: chat/completions (prompt + storia + ripasso in scadenza + testo)
   L-->>A: JSON del tutor
   A->>T: /audio/speech (reply + follow_up)
   T-->>A: audio (mp3)
@@ -45,7 +45,7 @@ sequenceDiagram
 | STT | `mlx-whisper`, `whisper-large-v3-turbo` | In-process nel backend (GPU Apple) | Alternativa: endpoint OpenAI-compatible |
 | LLM | Gemma 4 26B-A4B (Ollama) — alternativa Qwen3.6-35B-A3B (Splash) | Server separato | `LLM_BASE_URL`, `LLM_MODEL` |
 | TTS | `openai-macos-stt-tts` basato su `say` e voci macOS | Servizio locale separato, porta 5050 | Facoltativo; voce selezionata separatamente per IT/EN |
-| Memoria | SQLite (`data/tutor.db`) | File locale | Turni, errori, vocabolario |
+| Memoria | SQLite (`data/tutor.db`) | File locale | Turni, errori, vocabolario, coda di ripasso |
 
 Tempi misurati nell'app (turno tipico, Gemma 26B-A4B): **STT ≈ 0,55 s · LLM ≈ 0,9-1,1 s · TTS ≈ 1,0 s → ≈ 2,6 s** dalla fine
 del parlato alla voce del tutor. Un outlier a 6,9 s (LLM) è compatibile con il ricaricamento del modello da parte di Ollama
@@ -55,25 +55,31 @@ dopo il timeout di inattività (vedi §12).
 
 ```
 backend/
-  requirements.txt            dipendenze complete (include mlx-whisper, solo Apple Silicon)
+  requirements.txt            dipendenze complete e bloccate (include mlx-whisper, solo Apple Silicon)
   requirements-core.txt       senza mlx-whisper (Linux/Docker, STT_BACKEND=openai)
+  requirements-dev.txt        dipendenze di sviluppo (pytest, ruff)
+  ruff.toml                   linting (E/F/I, righe fino a 120 caratteri)
   app/
-    main.py                   rotte HTTP, CORS, mount del frontend compilato
+    main.py                   rotte HTTP, gestori d'errore globali, CORS, mount del frontend compilato
     orchestrator.py           flusso del turno (STT→LLM→TTS→memoria)
-    modes.py                  prompt di sistema per modalità + persona + lingua della voce
-    schemas.py                modelli Pydantic: TutorOutput, TurnResponse
+    modes.py                  prompt di sistema per modalità + persona + blocco di ripasso
+    schemas.py                modelli Pydantic: TutorOutput, TurnResponse, ripasso, riepilogo
     config.py                 variabili d'ambiente (.env) → Settings
-    memory.py                 SQLite: storia, errori, vocabolario
+    memory.py                 SQLite: storia, errori, vocabolario, coda di ripasso, riepilogo
+    review.py                 scheduler puro del ripasso (versione semplificata di SM-2)
+    errors.py                 eccezioni applicative con stato HTTP (LLM/STT/TTS/output)
     jsonparse.py              estrazione robusta del JSON dall'output dell'LLM (senza dipendenze)
     providers/stt.py          ffmpeg, filtro silenzio, backend mlx | openai
     providers/llm.py          client chat/completions, retry sul JSON non valido
     providers/tts.py          client /audio/speech
+  tests/                      suite pytest (parser, memoria, prompt, orchestrator, API)
 frontend/
-  src/App.jsx                 interfaccia, registrazione, riproduzione, modalità
+  src/App.jsx                 interfaccia, registrazione, riproduzione, modalità, ripasso
   src/vad.js                  VAD a energia (stop automatico al silenzio)
 llm_bench/                    benchmark LLM per il compito del tutor (§11)
 deploy/                       Dockerfile e compose (bozze non testate, §13)
 docs/TECHNICAL.md             questo file
+GUIDA-STUDENTE.md             guida pratica per lo studente (funzioni ed esempi)
 run.sh                        avvio in un solo processo
 .env.example                  tutte le variabili configurabili
 ```
@@ -91,7 +97,9 @@ run.sh                        avvio in un solo processo
    - Backend `mlx`: `mlx_whisper.transcribe(..., language=spoken_lang, condition_on_previous_text=False)`, serializzato da un
      `asyncio.Lock` (una sola trascrizione alla volta sulla GPU). Backend `openai`: POST multipart a `/audio/transcriptions`.
 3. **Prompt**: `modes.app_system_prompt(mode, level, spoken_lang)` (§7) + storia (`memory.history(session, mode)`, ultimi
-   `HISTORY_TURNS`=6 turni, dove l'assistente è rappresentato dal proprio JSON per mantenere il formato).
+   `HISTORY_TURNS`=6 turni, dove l'assistente è rappresentato dal proprio JSON per mantenere il formato). In conversazione e
+   scenario si aggiunge `modes.review_addendum(memory.review_context())`: al massimo 3 errori e 3 vocaboli scaduti, da
+   riusare solo se nasce l'occasione. Il blocco è aggiunto dall'orchestrator dell'app, quindi il benchmark non lo vede.
 4. **LLM**: `llm.tutor_reply` → `chat/completions` non in streaming, con `response_format: json_object` (se `LLM_JSON_MODE=1`)
    e `reasoning_effort: "none"`. Parsing con `extract_json` (toglie `<think>…</think>`, code fence, testo attorno) e validazione
    Pydantic. Se fallisce: **un** retry con «Reply again with ONLY the JSON object»; se la risposta era troncata
@@ -104,7 +112,8 @@ run.sh                        avvio in un solo processo
   `input`, `voice`, `language` e `response_format` all'endpoint OpenAI-compatible `/audio/speech`. `openai-macos-stt-tts`
   mappa `voice` alle voci di sistema disponibili e usa `language` (`it`/`en`) per la sintesi con `say`. Un errore del TTS non
   fa fallire il turno (log + risposta senza audio).
-7. **Persistenza** e risposta (`TurnResponse`).
+7. **Persistenza** e risposta (`TurnResponse`): il turno, le correzioni e i vocaboli vengono salvati; ogni correzione e ogni
+   vocabolo nuovo entra anche in `review_items` con scadenza immediata (o aggiornata, senza duplicati).
 
 ## 5. API HTTP
 
@@ -115,11 +124,15 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 | GET | `/api/health` | — | `{llm:{base_url,model}, stt_model, tts_enabled}` |
 | POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false) | `TurnResponse` |
 | POST | `/api/translate` | JSON `{text, target:"it"\|"en"}` | `{translation}` (non salva nulla) |
-| POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano) | `HelpResponse` (risposta italiana, audio e timings; non persistita) |
+| POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano) | `HelpResponse` (risposta italiana, `audio_b64` + `audio_segments` per le parti in inglese, timings; non persistita) |
 | POST | `/api/speak` | JSON `{text, lang}` | `{audio_b64, audio_mime}` |
 | POST | `/api/pronunciation-check` | `multipart/form-data`: `target` (frase inglese attesa), `audio` (registrazione) | `PronunciationCheck` |
 | GET | `/api/vocab` | — | elenco `{term, translation_it, example, first_seen, seen}` |
 | GET | `/api/mistakes` | — | elenco `{ts, session, original, corrected, type, explanation_it}` |
+| GET | `/api/review/due?limit=10` | — | `ReviewQueue` (`items`, `due_count`, `total`); `limit` 1…50 |
+| GET | `/api/review/stats` | — | `{due_count, total}` per il badge della UI |
+| POST | `/api/review/grade` | JSON `{id, result}` con `result` 0…3 | `{item, due_count, total}`; `404` se l'elemento non esiste |
+| GET | `/api/session/{session_id}/summary` | — | `SessionSummary` (turni, modalità, correzioni e vocaboli deduplicati) |
 
 `TurnResponse`:
 
@@ -139,13 +152,21 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 }
 ```
 
-Errori: `400` input non valido o nulla da trascrivere; `502` LLM/TTS non raggiungibile, risposta HTTP non valida o JSON non
-conforme; `500` problemi locali (ffmpeg assente, STT mal configurato). Il messaggio è in `detail` e il frontend lo mostra.
-`llm_tok_s` = token generati / tempo LLM totale (include il prefill: sottostima la velocità pura).
+Errori: `400` input non valido o nulla da trascrivere; `502` LLM/STT/TTS non raggiungibile, risposta HTTP non valida o JSON
+non conforme; `500` problemi locali (ffmpeg assente, STT mal configurato). Il messaggio è in `detail` e il frontend lo mostra.
+I provider traducono timeout, errori di connessione e risposte HTTP non valide nelle eccezioni di `errors.py`
+(`LLMUnavailable`, `STTUnavailable`, `TTSUnavailable`, `ModelOutputError`); `main.py` le gestisce con handler globali, così il
+messaggio dice quale servizio ha fallito. In `llm_bench` le stesse eccezioni restano errori del singolo caso, senza interrompere
+il benchmark. `llm_tok_s` = token generati / tempo LLM totale (include il prefill: sottostima la velocità pura).
 
 `POST /api/pronunciation-check` trascrive la registrazione in inglese con STT e allinea le parole riconosciute alla frase attesa. La risposta contiene `transcript`, `matched_words`, `total_words` e i gruppi di parole attese/riconosciute diversi. È un confronto lessicale automatico, non una valutazione fonetica o dell'accento.
 
-`POST /api/help` trascrive l'eventuale audio forzando l'italiano, passa gli ultimi turni `conversation` al LLM come contesto e sintetizza la risposta in italiano. Il turno di aiuto non viene salvato in SQLite e non cambia modalità, sessione o cronologia di pratica.
+`POST /api/help` trascrive l'eventuale audio forzando l'italiano, passa gli ultimi turni `conversation` al LLM come contesto e
+chiede una risposta JSON segmentata per lingua: `{"segments": [{"lang": "it|en", "text": "..."}]}`. Le parti inglesi vengono
+sintetizzate con la voce inglese e quelle italiane con la voce italiana; la prima clip finisce in `audio_b64`, le successive in
+`audio_segments` e la UI le riproduce in sequenza. Se il modello non produce il JSON, si usa un retry e poi un fallback che
+riconosce virgolette, righe inglesi e traduzioni tra parentesi. Il turno di aiuto non viene salvato in SQLite e non cambia
+modalità, sessione o cronologia di pratica.
 
 ## 6. Modello dati (SQLite, `DB_PATH`, default `data/tutor.db`)
 
@@ -153,9 +174,21 @@ conforme; `500` problemi locali (ffmpeg assente, STT mal configurato). Il messag
 turns(id, ts, session, mode, transcript, tutor_json)            -- storia; tutor_json = TutorOutput serializzato
 mistakes(id, ts, session, original, corrected, type, explanation_it)
 vocab(term PRIMARY KEY, translation_it, example, first_seen, seen)  -- term in minuscolo; seen++ se si ripresenta
+review_items(id, kind, source_key, prompt, answer, hint, due, interval_days, ease, repetitions, lapses,
+             last_result, created, last_reviewed, UNIQUE(kind, source_key))
 ```
-Le tabelle si creano da sole. La storia è filtrata per `session` **e** `mode`. `mistakes` e `vocab` sono già popolati ma non
-ancora usati per il ripasso (§15).
+Le tabelle si creano da sole. La storia è filtrata per `session` **e** `mode`. `review_items` raccoglie sia gli errori sia i
+vocaboli: `kind` è `mistake` o `vocab`, `source_key` evita duplicati, `due` è un timestamp Unix. Una migrazione idempotente
+(`PRAGMA user_version`, versione 1) crea/backfilla la coda dai dati già presenti in `mistakes` e `vocab`, quindi un database
+esistente continua a funzionare senza interventi manuali.
+
+Il ripasso usa una versione semplificata di SM-2 (`review.py`): «Non ricordato» riporta l'elemento in coda dopo circa 10 minuti,
+«Difficile»/«Bene»/«Facile» aumentano l'intervallo e regolano l'ease (limitato tra 1,3 e 3,0). La programmazione è una funzione
+pura e testata; `memory.grade_review` calcola e salva la nuova scadenza.
+
+Il blocco di ripasso nel prompt resta volutamente leggero: al massimo 3 errori e 3 vocaboli scaduti, ordinati per frequenza e
+scadenza, con l'istruzione di creare un'occasione naturale e di non trasformare il dialogo in un test. Il riepilogo di sessione
+legge i turni salvati e deduplica correzioni e vocaboli, senza una seconda chiamata all'LLM.
 
 ## 7. Prompt e contratto JSON
 
@@ -177,6 +210,8 @@ preposition | word_order | false_friend | other), `reply`, `suggested_reply`, `n
 - **translate**: traduce IT↔EN fedelmente in `reply`; `follow_up` = al massimo una nota in italiano.
 - **Persona** («Alex, un tutor AI che gira in locale») aggiunta solo da `app_system_prompt`; `system_prompt` (usato dal
   benchmark) non la contiene, così la cache del benchmark non si invalida per una questione cosmetica.
+- **Ripasso**: `review_addendum(context)` è un blocco aggiunto dall'orchestrator solo in conversazione e scenario. Non fa parte
+  di `system_prompt`/`SCHEMA` e non entra nell'impronta del benchmark: i risultati di `llm_bench` restano confrontabili.
 
 ### 7.3 Regola d'oro quando si tocca un prompt
 Qualsiasi modifica a `CONVERSATION`/`SCHEMA` cambia l'impronta (hash) dei risultati del benchmark: i vecchi risultati vengono
@@ -232,7 +267,14 @@ Il servizio usa `say` di macOS, quindi deve restare sull'host Mac e non può ess
 - **Aiuti per l'ascolto**: «Ascolta di nuovo», «Traduci» (`/api/translate`), «Solo ascolto» (testo nascosto finché non si clicca),
   🔊 per ogni frase suggerita nello scenario (`/api/speak`).
 - **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il confronto misura le parole riconosciute, non la qualità fonetica.
-- **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica.
+- **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica. La risposta è segmentata per lingua: le parti inglesi usano la voce inglese, quelle italiane la voce italiana.
+- **Ripasso**: «🔁 Ripasso» apre un drawer con il badge degli elementi scaduti. Mostra un elemento alla volta (errore o vocabolo),
+  «Mostra risposta», i quattro voti (Non ricordavo / Difficile / Bene / Facile) e, sotto, il riepilogo della sessione corrente
+  (turni, correzioni, vocaboli). Il badge si aggiorna all'avvio e dopo ogni turno; gli elementi votati escono subito dalla coda.
+  Dopo la risposta si può ascoltare la forma corretta (`/api/speak`) e ripeterla con `/api/pronunciation-check`, come nella pratica
+  della frase suggerita; il confronto è lessicale, non fonetico.
+- **Nuova sessione**: oltre a resettare chat e testi, ferma le registrazioni in corso (turno e pratica), mette in pausa l'audio e
+  azzera ripasso/aiuto/stato occupato. Le risposte asincrone di una sessione precedente vengono ignorate.
 - Il frontend mostra la «frase corretta» solo se ci sono correzioni.
 
 ## 10. Benchmark e registro delle decisioni
@@ -281,9 +323,10 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
   Semantica del punteggio: «corretto» = nessuna correzione mostrata (come nell'app).
 - **`stt-bench`** (progetto separato): `record.py` (registra le frasi dal microfono) e `run_bench.py` (WER/CER per categoria,
   clip lunghe, test di pronuncia). Ogni risultato salvato porta l'impronta dell'audio e si rifà se il file cambia.
-- Stato dei test automatici: nessuna suite unitaria formale. Parser JSON, memoria, prompt, punteggio, filtro anti-silenzio e logica
-  del VAD sono stati verificati con prove mirate; backend completo e frontend sono stati collaudati a mano dal committente (il
-  frontend nelle ultime versioni — scenari, VAD — è stato scritto ma provato in browser solo parzialmente).
+- Stato dei test automatici: la suite backend è in `backend/tests/` (38 test) e copre parser JSON, ripasso, memoria e migrazione,
+  prompt/benchmark, orchestrator con provider finti e API con `TestClient`. Girano su un database temporaneo e non toccano
+  `data/tutor.db` né i servizi reali. Comandi: `cd backend && .venv/bin/python -m pytest -q` e `.venv/bin/python -m ruff check app tests`.
+  Il frontend e il flusso audio reale restano da collaudare a mano in browser.
 
 ## 12. Troubleshooting
 
@@ -337,10 +380,11 @@ usare «Installa come app/aggiungi al Dock» (comportamento da verificare), più
 1. **Valutazione fonetica della pronuncia**: la ripetizione guidata confronta già la trascrizione Whisper con la frase attesa, ma non valuta i singoli fonemi o l'accento. Per quello serve un modello fonemico (es. wav2vec2 per fonemi) e forced alignment; l'LLM può poi spiegare gli errori.
 2. **Streaming** (WebSocket): far partire il TTS sulla `reply` mentre l'LLM genera ancora le correzioni; con ≈ 2,6 s di latenza
    attuale è secondario.
-3. **Ripasso e memoria**: usare `mistakes` e `vocab` (ripetizione dilazionata, errori ricorrenti nel prompt, livello adattivo).
+3. **Ripasso adattivo**: coda, voti e iniezione nel prompt sono disponibili; mancano livello adattivo e statistiche storiche
+   (accuratezza nel tempo, elementi più problematici).
 4. **VAD neurale** (Silero) se il rumore ambientale mette in difficoltà quello a energia.
-5. **Scenari predefiniti** e obiettivi di sessione; riepilogo a fine sessione.
-6. **Test automatici**: suite pytest su parser, orchestrator (con provider finti), API (httpx/TestClient) e CI che lanci `llm_bench`.
+5. **Scenari predefiniti e obiettivi di sessione**: il riepilogo di sessione è già presente; mancano scenari pronti e obiettivi.
+6. **CI**: la suite pytest esiste e copre backend e orchestrator; manca l'esecuzione automatica (insieme a `llm_bench`) su ogni modifica.
 7. **STT intercambiabile con Whisper su Metal via HTTP**, per sbloccare Docker e l'uso da altri dispositivi.
 8. **Altre lingue**: i prompt sono parametrizzabili in `modes.py` (`LANG_NAME`, `CONVERSATION`); servono voci TTS e un set di casi di benchmark.
 9. **Estetica**: barra laterale + chat, tema chiaro/scuro automatico, CSS puro; nessun lavoro di design oltre a questo (niente icone dedicate, animazioni o PWA).
@@ -356,3 +400,5 @@ usare «Installa come app/aggiungi al Dock» (comportamento da verificare), più
   `LLM_BASE_URL`/`LLM_MODEL`.
 - **Nuovo campo nel JSON del tutor**: aggiorna `SCHEMA` in `modes.py`, `schemas.py`, il frontend, `scoring.py` se rilevante, e
   rilancia il benchmark (cambia l'impronta dei risultati).
+- **Nuovo tipo di ripasso**: aggiungi il valore ammesso da `kind` nello schema/migrazione, crea gli elementi in `memory.py` e
+  mostra il nuovo tipo nel drawer; `review.py` resta indipendente dal tipo.

@@ -5,6 +5,7 @@ import httpx
 from pydantic import ValidationError
 
 from ..config import settings
+from ..errors import LLMUnavailable, ModelOutputError
 from ..jsonparse import NotJSON, extract_json
 from ..schemas import TutorOutput
 
@@ -35,12 +36,24 @@ async def chat(messages: list[dict], *, base_url: str | None = None, model: str 
     payload.update(settings.llm_extra_body if extra_body is None else extra_body)
 
     url = (base_url or settings.llm_base_url).rstrip("/") + "/chat/completions"
-    r = await _http().post(url, json=payload,
-                           headers={"Authorization": f"Bearer {api_key or settings.llm_api_key}"})
-    r.raise_for_status()
-    data = r.json()
-    choice = data["choices"][0]
-    msg = choice["message"]
+    try:
+        r = await _http().post(url, json=payload,
+                               headers={"Authorization": f"Bearer {api_key or settings.llm_api_key}"})
+        r.raise_for_status()
+        data = r.json()
+    except httpx.TimeoutException as e:
+        raise LLMUnavailable(f"nessuna risposta da {url}") from e
+    except httpx.ConnectError as e:
+        raise LLMUnavailable(f"non raggiungibile su {url}") from e
+    except httpx.HTTPStatusError as e:
+        raise LLMUnavailable(f"ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
+    except httpx.HTTPError as e:
+        raise LLMUnavailable(str(e)) from e
+    try:
+        choice = data["choices"][0]
+        msg = choice["message"]
+    except (KeyError, IndexError, TypeError) as e:
+        raise LLMUnavailable(f"risposta non valida: {e}") from e
     usage = dict(data.get("usage") or {})
     usage["finish_reason"] = choice.get("finish_reason")
     # alcuni server restituiscono il ragionamento in un campo separato dal contenuto
@@ -60,9 +73,13 @@ async def tutor_reply(system: str, history: list[dict], user_text: str, **kw) ->
         return parse_tutor(text), usage
     except (NotJSON, ValidationError):
         if usage.get("finish_reason") == "length":
-            raise NotJSON("risposta troncata da max_tokens: probabile thinking attivo (usa reasoning_effort=none)") from None
+            raise ModelOutputError("risposta troncata da max_tokens: probabile thinking attivo "
+                                   "(usa reasoning_effort=none)") from None
         messages += [{"role": "assistant", "content": text},
                      {"role": "user", "content": "Reply again with ONLY the JSON object, no other text."}]
         text, usage2 = await chat(messages, **kw)
         usage = {k: (usage.get(k) or 0) + (usage2.get(k) or 0) for k in ("prompt_tokens", "completion_tokens")}
-        return parse_tutor(text), usage
+        try:
+            return parse_tutor(text), usage
+        except (NotJSON, ValidationError) as e:
+            raise ModelOutputError(f"il modello non ha prodotto il JSON atteso: {e}") from e

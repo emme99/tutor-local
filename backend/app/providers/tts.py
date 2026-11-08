@@ -4,6 +4,7 @@ from __future__ import annotations
 import httpx
 
 from ..config import settings
+from ..errors import TTSUnavailable
 
 _client: httpx.AsyncClient | None = None
 
@@ -19,12 +20,19 @@ async def speak(text: str, lang: str) -> tuple[bytes, str] | None:
     if _client is None:
         _client = httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=5.0))
     voice = settings.tts_voice_en if lang == "en" else settings.tts_voice_it
-    r = await _client.post(
-        settings.tts_base_url.rstrip("/") + "/audio/speech",
-        json={"model": settings.tts_model, "input": text, "voice": voice, "language": lang,
-              "response_format": settings.tts_format},
-        headers={"Authorization": f"Bearer {settings.tts_api_key}"},
-    )
-    r.raise_for_status()
+    try:
+        r = await _client.post(
+            settings.tts_base_url.rstrip("/") + "/audio/speech",
+            json={"model": settings.tts_model, "input": text, "voice": voice, "language": lang,
+                  "response_format": settings.tts_format},
+            headers={"Authorization": f"Bearer {settings.tts_api_key}"},
+        )
+        r.raise_for_status()
+    except httpx.TimeoutException as e:
+        raise TTSUnavailable(f"nessuna risposta da {settings.tts_base_url}") from e
+    except httpx.HTTPStatusError as e:
+        raise TTSUnavailable(f"ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
+    except httpx.HTTPError as e:
+        raise TTSUnavailable(str(e)) from e
     mime = r.headers.get("content-type", "audio/mpeg").split(";")[0]
     return r.content, mime

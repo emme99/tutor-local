@@ -15,6 +15,7 @@ import tempfile
 import wave
 
 from ..config import settings
+from ..errors import STTUnavailable
 
 
 def _to_wav(data: bytes, suffix: str = ".webm") -> str:
@@ -70,12 +71,21 @@ async def _transcribe_openai(wav: str, language: str | None) -> str:
         data["prompt"] = settings.stt_initial_prompt
     with open(wav, "rb") as f:
         content = f.read()
-    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=5.0)) as c:
-        r = await c.post(settings.stt_base_url.rstrip("/") + "/audio/transcriptions",
-                         headers={"Authorization": f"Bearer {settings.stt_api_key}"},
-                         data=data, files={"file": ("audio.wav", content, "audio/wav")})
-    r.raise_for_status()
-    return r.json()["text"].strip()
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=5.0)) as c:
+            r = await c.post(settings.stt_base_url.rstrip("/") + "/audio/transcriptions",
+                             headers={"Authorization": f"Bearer {settings.stt_api_key}"},
+                             data=data, files={"file": ("audio.wav", content, "audio/wav")})
+            r.raise_for_status()
+            return r.json()["text"].strip()
+    except httpx.TimeoutException as e:
+        raise STTUnavailable(f"nessuna risposta da {settings.stt_base_url}") from e
+    except httpx.HTTPStatusError as e:
+        raise STTUnavailable(f"ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
+    except httpx.HTTPError as e:
+        raise STTUnavailable(str(e)) from e
+    except (KeyError, ValueError) as e:
+        raise STTUnavailable(f"risposta non valida: {e}") from e
 
 
 async def transcribe(audio: bytes, language: str | None, suffix: str = ".webm") -> str:

@@ -1,25 +1,62 @@
 from __future__ import annotations
 
+import base64
 import logging
 from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from . import memory, orchestrator
 from .config import settings
-from .jsonparse import NotJSON
+from .errors import TutorError
 from .pronunciation import compare_transcript
 from .providers import llm, stt, tts
-from .schemas import HelpResponse, PronunciationCheck, TurnResponse
+from .schemas import (
+    HelpResponse,
+    PronunciationCheck,
+    ReviewGradeIn,
+    ReviewGradeOut,
+    ReviewQueue,
+    ReviewStats,
+    SessionSummary,
+    TurnResponse,
+)
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="tutor-local")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
+
+
+@app.exception_handler(TutorError)
+async def tutor_error_handler(_request, exc: TutorError):
+    if exc.status_code >= 500:
+        logging.getLogger("tutor").warning("%s", exc)
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
+
+
+@app.exception_handler(orchestrator.EmptyInput)
+async def empty_input_handler(_request, exc: orchestrator.EmptyInput):
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@app.exception_handler(httpx.HTTPError)
+async def httpx_error_handler(_request, exc: httpx.HTTPError):
+    # Rete di sicurezza: i provider traducono già gli errori in TutorError.
+    logging.getLogger("tutor").warning("errore HTTP non gestito: %s", exc)
+    return JSONResponse(status_code=502, content={"detail": f"servizio locale non disponibile: {exc}"})
+
+
+@app.exception_handler(RuntimeError)
+async def runtime_error_handler(_request, exc: RuntimeError):
+    # Problemi locali (es. ffmpeg mancante): messaggio leggibile senza esporre uno stack trace.
+    logging.getLogger("tutor").exception("errore locale: %s", exc)
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
 
 
 @app.get("/api/health")
@@ -36,21 +73,10 @@ async def turn(session_id: str = Form(...), mode: str = Form("conversation"), le
         raise HTTPException(400, "mode o spoken_lang non validi")
     data = await audio.read() if audio else None
     suffix = Path(audio.filename or "turn.webm").suffix or ".webm" if audio else ".webm"
-    try:
-        return await orchestrator.run_turn(session_id=session_id, mode=mode, level=level,
-                                           spoken_lang=spoken_lang, text=text, audio=data,
-                                           audio_suffix=suffix, speak=speak,
-                                           speak_explanations=speak_explanations)
-    except orchestrator.EmptyInput as e:
-        raise HTTPException(400, str(e)) from e
-    except httpx.ConnectError as e:
-        raise HTTPException(502, f"LLM non raggiungibile su {settings.llm_base_url}: avvia Ollama/LM Studio") from e
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(502, f"LLM ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
-    except (NotJSON, ValidationError) as e:
-        raise HTTPException(502, f"Il modello non ha prodotto il JSON atteso: {e}") from e
-    except RuntimeError as e:
-        raise HTTPException(500, str(e)) from e
+    return await orchestrator.run_turn(session_id=session_id, mode=mode, level=level,
+                                       spoken_lang=spoken_lang, text=text, audio=data,
+                                       audio_suffix=suffix, speak=speak,
+                                       speak_explanations=speak_explanations)
 
 
 @app.post("/api/help", response_model=HelpResponse)
@@ -60,17 +86,8 @@ async def contextual_help(session_id: str = Form(...), text: str | None = Form(N
         raise HTTPException(400, "serve una domanda in italiano")
     data = await audio.read() if audio else None
     suffix = Path(audio.filename or "help.webm").suffix or ".webm" if audio else ".webm"
-    try:
-        return await orchestrator.contextual_help(session_id=session_id, text=text,
-                                                  audio=data, audio_suffix=suffix)
-    except orchestrator.EmptyInput as e:
-        raise HTTPException(400, str(e)) from e
-    except httpx.ConnectError as e:
-        raise HTTPException(502, f"LLM non raggiungibile su {settings.llm_base_url}: avvia Ollama/LM Studio") from e
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(502, f"LLM ha risposto {e.response.status_code}: {e.response.text[:200]}") from e
-    except RuntimeError as e:
-        raise HTTPException(500, str(e)) from e
+    return await orchestrator.contextual_help(session_id=session_id, text=text,
+                                              audio=data, audio_suffix=suffix)
 
 
 @app.get("/api/vocab")
@@ -81,6 +98,31 @@ async def vocab():
 @app.get("/api/mistakes")
 async def mistakes():
     return memory.list_mistakes()
+
+
+@app.get("/api/review/due", response_model=ReviewQueue)
+async def review_due(limit: int = 10):
+    if not 1 <= limit <= 50:
+        raise HTTPException(400, "limit deve essere tra 1 e 50")
+    return memory.due_reviews(limit=limit)
+
+
+@app.get("/api/review/stats", response_model=ReviewStats)
+async def review_stats():
+    return memory.review_stats()
+
+
+@app.post("/api/review/grade", response_model=ReviewGradeOut)
+async def review_grade(body: ReviewGradeIn):
+    item = memory.grade_review(body.id, body.result)
+    if not item:
+        raise HTTPException(404, "elemento di ripasso non trovato")
+    return {"item": item, **memory.review_stats()}
+
+
+@app.get("/api/session/{session_id}/summary", response_model=SessionSummary)
+async def session_summary(session_id: str):
+    return memory.session_summary(session_id)
 
 
 class TranslateIn(BaseModel):
@@ -94,15 +136,11 @@ async def translate(body: TranslateIn):
     name = {"it": "Italian", "en": "English"}.get(body.target)
     if not name or not body.text.strip():
         raise HTTPException(400, "testo o lingua non validi")
-    try:
-        out, _ = await llm.chat(
-            [{"role": "system", "content": f"Translate the user's text into {name}. Output only the translation."},
-             {"role": "user", "content": body.text}],
-            json_mode=False, temperature=0.2, max_tokens=300)
-    except httpx.HTTPError as e:
-        raise HTTPException(502, f"LLM non disponibile: {e}") from e
+    out, _ = await llm.chat(
+        [{"role": "system", "content": f"Translate the user's text into {name}. Output only the translation."},
+         {"role": "user", "content": body.text}],
+        json_mode=False, temperature=0.2, max_tokens=300)
     return {"translation": out.strip()}
-
 
 class SpeakIn(BaseModel):
     text: str
@@ -116,13 +154,9 @@ async def speak(body: SpeakIn):
         raise HTTPException(400, "testo o lingua non validi")
     if not tts.enabled():
         raise HTTPException(503, "TTS non configurato (TTS_BASE_URL)")
-    try:
-        res = await tts.speak(body.text, body.lang)
-    except httpx.HTTPError as e:
-        raise HTTPException(502, f"TTS non disponibile: {e}") from e
+    res = await tts.speak(body.text, body.lang)
     if not res:
         raise HTTPException(502, "il TTS non ha prodotto audio")
-    import base64
     return {"audio_b64": base64.b64encode(res[0]).decode(), "audio_mime": res[1]}
 
 
@@ -133,10 +167,7 @@ async def pronunciation_check(target: str = Form(...), audio: UploadFile = File(
         raise HTTPException(400, "frase attesa non valida")
     data = await audio.read()
     suffix = Path(audio.filename or "turn.webm").suffix or ".webm"
-    try:
-        transcript = await stt.transcribe(data, "en", suffix)
-    except RuntimeError as e:
-        raise HTTPException(500, str(e)) from e
+    transcript = await stt.transcribe(data, "en", suffix)
     return compare_transcript(target, transcript)
 
 
