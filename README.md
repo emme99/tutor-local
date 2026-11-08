@@ -3,6 +3,8 @@
 Whisper (STT) → LLM (tutor) → TTS, orchestrati da un backend FastAPI, con un frontend React minimale.
 Il progetto parte volutamente piccolo: un turno = una richiesta HTTP, poi si ottimizza.
 
+> **⚠️ Disclaimer**: tutor-local è un progetto **sperimentale**, realizzato con l'ausilio di strumenti di intelligenza artificiale. L'autore non si assume alcuna responsabilità per l'utilizzo di questo codice.
+
 > **Sei uno studente?** Leggi [GUIDA-STUDENTE.md](GUIDA-STUDENTE.md): funzionalità, esempi d'uso e routine di studio.
 
 ```
