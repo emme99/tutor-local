@@ -20,22 +20,23 @@ MacBook Pro M3 Max (36 GB).
 
 ```mermaid
 sequenceDiagram
-  participant B as Browser (React)
-  participant A as FastAPI (orchestrator)
-  participant S as Whisper (MLX, in-process)
-  participant L as LLM (Ollama / Splash)
-  participant T as TTS (openai-macos-stt-tts, macOS say)
-  B->>B: MediaRecorder + VAD (stop al silenzio)
-  B->>A: POST /api/turn (audio webm, modalità, livello)
-  A->>A: ffmpeg → WAV 16 kHz; scarta audio breve/silenzioso
+  participant B as Browser<br/>React
+  participant A as FastAPI<br/>orchestrator
+  participant S as Whisper<br/>MLX in-process
+  participant L as LLM<br/>Ollama / Splash
+  participant T as TTS<br/>macOS say
+
+  B->>B: MediaRecorder + VAD<br/>(stop al silenzio)
+  B->>A: POST /api/turn<br/>(audio webm, modalità, livello)
+  A->>A: ffmpeg → WAV 16 kHz<br/>scarta audio breve/silenzioso
   A->>S: trascrivi (lingua forzata)
   S-->>A: testo
-  A->>L: chat/completions (prompt + storia + ripasso in scadenza + testo)
+  A->>L: chat/completions<br/>(prompt + storia + ripasso + testo)
   L-->>A: JSON del tutor
-  A->>T: /audio/speech (reply + follow_up)
+  A->>T: /audio/speech<br/>(reply + follow_up)
   T-->>A: audio (mp3)
-  A->>A: salva turno, errori, vocabolario (SQLite)
-  A-->>B: JSON (trascrizione, tutor, audio base64, tempi)
+  A->>A: salva turno, errori, vocabolario<br/>(SQLite)
+  A-->>B: JSON<br/>(trascrizione, tutor, audio base64, tempi)
 ```
 
 | Componente | Tecnologia | Dove gira | Note |
@@ -131,7 +132,7 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 | POST | `/api/translate` | JSON `{text, target:"it"\|"en"}` | `{translation}` (non salva nulla) |
 | POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano), `tts_speed?` (default 1.0) | `HelpResponse` (risposta italiana, `audio_b64` + `audio_segments` per le parti in inglese, timings; non persistita) |
 | POST | `/api/speak` | JSON `{text, lang, speed?}` (speed default 1.0) | `{audio_b64, audio_mime}` |
-| POST | `/api/pronunciation-check` | `multipart/form-data`: `target` (frase inglese attesa), `audio` (registrazione) | `PronunciationCheck` |
+| POST | `/api/pronunciation-check` | `multipart/form-data`: `target` (frase inglese attesa), `audio` (registrazione) | `PronunciationCheck` (`score`, `matched_phones`, `total_phones`, `expected_ipa`, `predicted_ipa`, `short_target`, `verdict`, `ops`, `words`, `issues`) |
 | GET | `/api/vocab` | — | elenco `{term, translation_it, example, first_seen, seen}` |
 | GET | `/api/mistakes` | — | elenco `{ts, session, original, corrected, type, explanation_it}` |
 | GET | `/api/review/due?limit=10` | — | `ReviewQueue` (`items`, `due_count`, `total`); `limit` 1…50 |
@@ -164,7 +165,13 @@ I provider traducono timeout, errori di connessione e risposte HTTP non valide n
 messaggio dice quale servizio ha fallito. In `llm_bench` le stesse eccezioni restano errori del singolo caso, senza interrompere
 il benchmark. `llm_tok_s` = token generati / tempo LLM totale (include il prefill: sottostima la velocità pura).
 
-`POST /api/pronunciation-check` valuta la registrazione in inglese con il motore fonetico (§8): confronta l'IPA decodificato dall'audio con quello atteso del testo. La risposta (`PronunciationCheck`) contiene `score` (0–100), `matched_phones`/`total_phones`, `expected_ipa` e `predicted_ipa`. Audio breve/silenzioso → 400 `EmptyAudio`. È un confronto fonetico automatico, non una valutazione dell'accento o della prosodia.
+`POST /api/pronunciation-check` valuta la registrazione in inglese con il motore fonetico (§8): confronta l'IPA decodificato dall'audio con quello atteso del testo. La risposta (`PronunciationCheck`) contiene `score` (0–100), `matched_phones`/`total_phones` (conteggio effettivo delle unità allineate), `expected_ipa` e `predicted_ipa`, più i campi introdotti in Fase 5:
+- `short_target` (bool) e `verdict` (`"ok"` | `"dubbio"` | `"da_rivedere"` | `null` per target lunghi);
+- `ops`: lista delle operazioni DP di allineamento (`match`, `sub`, `ins`, `del`);
+- `words`: dettaglio per parola con `word`, `expected_ipa`, `heard_ipa`, `score`, `ops`;
+- `issues`: al massimo 2 consigli deterministici in italiano ordinati per gravità (`word`, `expected`, `heard`, `tip_it`, `severity`).
+
+Audio breve/silenzioso → 400 `EmptyAudio`; audio oltre `PHONETIC_MAX_SECONDS` → 400 `AudioTooLong`. È un confronto fonetico automatico, non una valutazione dell'accento o della prosodia.
 
 `POST /api/help` trascrive l'eventuale audio forzando l'italiano, passa gli ultimi turni `conversation` al LLM come contesto e
 chiede una risposta JSON segmentata per lingua: `{"segments": [{"lang": "it|en", "text": "..."}]}`. Le parti inglesi vengono
@@ -241,6 +248,8 @@ L'aggiunta di `suggested_reply` cambia prompt e schema: i risultati precedenti n
 | `AUDIO_MIN_SECONDS`, `AUDIO_MIN_RMS` | `0.4`, `0.004` | Filtro anti-silenzio prima di Whisper |
 | `PHONETIC_MODEL` | `facebook/wav2vec2-xlsr-53-espeak-cv-ft` | Checkpoint Wav2Vec2 per la valutazione fonetica della pronuncia |
 | `PHONETIC_DEVICE` | `mps` | Device PyTorch (`cpu` se MPS non è disponibile) |
+| `PHONETIC_MAX_SECONDS` | `20.0` | Limite massimo durata clip audio per prevenire picchi memoria/latenza su MPS |
+| `PHONETIC_SHORT_MAX_UNITS` | `8` | Soglia massima di unità fonetiche per attivare la modalità bersaglio breve (`verdict`) |
 | `TTS_BASE_URL` | vuoto | URL base del servizio locale, es. `http://127.0.0.1:5050/v1`. Vuoto = nessun audio |
 | `TTS_API_KEY` | `local` | Token inviato come Bearer; il servizio locale non lo usa per autenticarsi |
 | `TTS_MODEL` | `tts-1` | Campo richiesto dal protocollo; il servizio `say` lo accetta per compatibilità |
@@ -307,7 +316,7 @@ alla prima chiamata e le inferenze sono serializzate da un lock; l'audio breve/s
 
 - **Layout**: barra laterale a sinistra con le opzioni (modalità, livello o lingua, microfono, solo ascolto, nuova sessione) e a destra la chat
   (conversazione dall'alto verso il basso con scorrimento automatico, compositore con «● Parla» e campo di testo in basso). Sotto gli 820 px la
-  barra diventa un pannello a scomparsa (☰). Chiaro/scuro automatico (`prefers-color-scheme`). Solo CSS puro, nessuna libreria di UI.
+  barra diventa un pannello a scomparsa (☰). I drawer di ripasso e aiuto sopra i 1000 px sono **affiancati** nel layout (`flex: 1` per la chat, drawer a larghezza fissa) impedendo che i messaggi o il compositore vengano coperti; sotto i 1000 px aprono come overlay con scrim oscurato e chiusura rapida con tasto `Esc` o clic esterno. Chiaro/scuro automatico (`prefers-color-scheme`). Solo CSS puro, nessuna libreria di UI.
 - **Stato** (React hooks): sessione (UUID, «Nuova sessione» lo rigenera), modalità, livello, impostazioni audio, turni, errori.
   Le callback asincrone (fine registrazione, fine riproduzione) leggono le impostazioni correnti da un `ref` (`cfg`), per evitare
   closure obsolete.
@@ -322,7 +331,9 @@ alla prima chiamata e le inferenze sono serializzate da un lock; l'audio breve/s
 - **Aiuti per l'ascolto**: «Ascolta di nuovo», «Traduci» (`/api/translate`), «Solo ascolto» (testo nascosto finché non si clicca),
   🔊 per ogni frase suggerita nello scenario (`/api/speak`).
 - **Velocità inglese**: selettore nella sidebar sinistra (0,8×, 0,9×, 1,0×, 1,1×, 1,2×); non modifica il parlato italiano.
-- **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il risultato mostra uno score 0–100 con badge colorato (verde ≥ 70, giallo 45–69, rosso < 45), i fonemi stimati e le sequenze IPA attesa/pronunciata.
+- **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il risultato viene mostrato tramite il componente `PronunciationFeedback`:
+  - sui **target brevi** (`short_target: true`): niente percentuale ingannevole; verdetto qualitativo con icona (`✓ Ci sei`, `~ Dubbio`, `✗ Da rivedere`), righe IPA atteso/udito allineate tramite `ops` (simboli sostituiti/omessi/inseriti evidenziati) e riepilogo testuale delle differenze;
+  - sui **target lunghi**: badge score secondario, chip colorati per singola parola con stato (`ok`, `dubbio`, `da rivedere`) espandibili con click per vedere atteso, udito e tip specifico, più i primi due suggerimenti globali (`issues`).
 - **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica. La risposta è segmentata per lingua: le parti inglesi usano la voce inglese, quelle italiane la voce italiana.
 - **Ripasso**: «🔁 Ripasso» apre un drawer con il badge degli elementi scaduti. Mostra un elemento alla volta (errore o vocabolo),
   «Mostra risposta», i quattro voti (Non ricordavo / Difficile / Bene / Facile) e, sotto, il riepilogo della sessione corrente
@@ -372,9 +383,9 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
   score è **95/100**; sulla voce macOS `say` è **32/100** (fuori dominio per il modello), quindi `say` non è un riferimento valido.
 - **Perché non Whisper/difflib**: il confronto lessicale non vede i singoli fonemi (es. `ship`/`sheep`, `think`/`sink`); il
   motore fonemico distingue i suoni e restituisce uno score 0–100 più le sequenze IPA.
-- **Scoring**: Levenshtein **pesata sui simboli IPA atomici** (sostituzione vocale-vocale 0.5, tutto il resto 1.0), dopo aver
-  normalizzato lunghezza (`ː`, `ˑ`) e allofoni (`ɹ→r`, `ɾ→t`, `ᵻ→ɪ`, `ɐ→ə`). Il greedy longest-match è stato scartato perché
-  sbagliava token come `ju`/`uː`; si usa `tokenizer.phonemize()`.
+- **Scoring e allineamento (Fase 5.1)**: Levenshtein pesata calcolata con programmazione dinamica e backtrace (`align`), che attribuisce operazioni `match`, `sub`, `ins`, `del` a ciascuna parola. I dittonghi (`DIPHTHONGS = {"oʊ", "aɪ", "eɪ", "aʊ", "ɔɪ"}`) sono trattati come unità atomiche e non spezzati: la monottongazione comune per i parlanti italiani (`oʊ→o`) costa 0.5 anziché 1.0 (sostituzione vocale anziché cancellazione intera). Questo sposta lo score di riferimento per la registrazione umana `en02` da **82 a 84** (distanza 8.0 su 49 unità fonetiche).
+- **Bersagli brevi e verdetto qualitativo (Fase 5.4b)**: per frasi/parole con unità ≤ `PHONETIC_SHORT_MAX_UNITS` (default 8), la percentuale è ingannevole: nel caso *tower/towel* (`t aʊ əl` pronunciato `t a b ɔ l`), la sola sostituzione consonantica `ʊ→b` portava uno score 70 (apparentemente "verde"). La funzione pura `verdict(ops)` assegna invece `ok` (nessuna differenza), `dubbio` (solo differenze vocale-vocale) e `da_rivedere` (errori consonantici, omissioni o inserzioni), senza mostrare percentuali.
+- **Consigli deterministici in italiano (Fase 5.3)**: `app/phonetic_tips.py` contiene una tabella di matching per pattern tipici dell'italiano (omissione di `h`, confusione di `θ`/`ð`, suffissi `-ed` o consonanti finali omesse, vocali parassite tipo *istreet* o *doga*). Nessuna chiamata LLM: matching offline istantaneo, max 2 consigli ordinati per gravità con tono prudente.
 - **Misure su 11 frasi umane** (accento italiano): mediana **69** (min 47); coppie minime **7/8** con delta mediano **+33.5**;
   perturbazione **11/11** con drop mediano **+8**; latenza a caldo **~0.12 s**; memoria **~1.26 GB** MPS allocati / ~2.2 GB driver.
 - **Gate tarati**: mediana ≥ 60 e min ≥ 40; coppie ≥ 7/8 e delta ≥ 10; perturbazioni ≥ 9/11 e drop ≥ 5; latenza < 1 s. Il gate
@@ -402,8 +413,8 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
 - **`phonetic_bench/run_bench.py`**: benchmark su audio umano con i quattro gate di fase 2 (frasi pulite, coppie minime,
   perturbazione, latenza/memoria). Salva `results/bench.json` (con impronta di modello/frasi/audio) e `results/report.md`;
   esce con codice 1 se un gate non passa. Default: `--phrases stt-bench/phrases.json --audio-dir stt-bench/recordings/mac`.
-- Stato dei test automatici: la suite backend è in `backend/tests/` (46 test) e copre parser JSON, ripasso, memoria e migrazione,
-  prompt/benchmark, orchestrator con provider finti e API con `TestClient`. Girano su un database temporaneo e non toccano
+- Stato dei test automatici: la suite backend è in `backend/tests/` (73 test) e copre parser JSON, ripasso, memoria e migrazione,
+  prompt/benchmark, orchestrator con provider finti, API con `TestClient`, motore fonetico (allineamento DP, dittonghi, verdetto) e consigli deterministici (`test_tips.py`). Girano su un database temporaneo e non toccano
   `data/tutor.db` né i servizi reali. Comandi: `cd backend && .venv/bin/python -m pytest -q` e `.venv/bin/python -m ruff check app tests`.
   Il frontend e il flusso audio reale restano da collaudare a mano in browser.
 

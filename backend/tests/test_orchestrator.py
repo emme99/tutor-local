@@ -87,7 +87,7 @@ def test_explanation_segments_are_created(fake_memory, monkeypatch):
             explanation_it="Si dice «I agree» oppure «I totally agree».",
             type="grammar")]), {}
 
-    async def fake_tts(text, lang):
+    async def fake_tts(text, lang, **kwargs):
         calls.append((text, lang))
         return b"audio", "audio/mpeg"
 
@@ -145,7 +145,7 @@ def test_contextual_help_uses_tagged_segments_for_tts(monkeypatch):
                 '{"lang": "en", "text": "I have some free time."},'
                 '{"lang": "it", "text": "\\nUsa il present simple."}]}', {})
 
-    async def fake_tts(text, lang):
+    async def fake_tts(text, lang, **kwargs):
         calls.append((text, lang))
         return b"audio", "audio/mpeg"
 
@@ -181,7 +181,7 @@ def test_contextual_help_fallback_marks_unquoted_english_lines(monkeypatch):
     async def fake_chat(messages, **kwargs):
         return plain, {}
 
-    async def fake_tts(text, lang):
+    async def fake_tts(text, lang, **kwargs):
         calls.append((text, lang))
         return b"audio", "audio/mpeg"
 

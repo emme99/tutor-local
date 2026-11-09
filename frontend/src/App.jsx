@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { startVAD } from "./vad.js";
+import PronunciationFeedback from "./PronunciationFeedback.jsx";
 
 let nextId = 1;
 
 function reviewSpeechText(item) {
   // Per gli errori si ascolta la forma corretta; per i vocaboli il termine inglese, non la traduzione.
   return item?.kind === "mistake" ? item.answer : item.prompt;
-}
-
-function scoreTone(score) {
-  // Soglie tarate sul parlato accentato reale (fase 2): "buono" ~70, non ~90.
-  if (score >= 70) return "score-good";
-  if (score >= 45) return "score-mid";
-  return "score-low";
 }
 
 export default function App() {
@@ -81,6 +75,17 @@ export default function App() {
   useEffect(() => {
     refreshReviewStats();
   }, []);
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === "Escape") {
+        if (helpOpen) closeHelp();
+        else if (reviewOpen) closeReview();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [helpOpen, reviewOpen]);
 
   async function refreshReviewStats() {
     try {
@@ -761,17 +766,7 @@ export default function App() {
                         {practice.loading && <p className="muted small">Confronto la frase…</p>}
                         {practice.error && <p className="practice-error">{practice.error}</p>}
                         {practice.result && (
-                          <div className="practice-result">
-                            <p>
-                              <span className={`score-badge ${scoreTone(practice.result.score)}`}>
-                                {practice.result.score}/100
-                              </span>
-                              {" "}Fonemi corretti (stima): {practice.result.matched_phones}/{practice.result.total_phones}
-                            </p>
-                            <p className="ipa"><span className="ipa-label">Atteso:</span> {practice.result.expected_ipa}</p>
-                            <p className="ipa"><span className="ipa-label">Pronunciato:</span> {practice.result.predicted_ipa}</p>
-                            <p className="muted small">Confronto fonetico automatico sui fonemi; non valuta l'accento né la prosodia.</p>
-                          </div>
+                          <PronunciationFeedback result={practice.result} onRetry={togglePracticeRecording} />
                         )}
                       </div>
                     )}
@@ -933,17 +928,7 @@ export default function App() {
                     {reviewAttempt?.loading && <p className="muted small">Confronto la pronuncia…</p>}
                     {reviewAttempt?.error && <p className="practice-error">{reviewAttempt.error}</p>}
                     {reviewAttempt?.result && (
-                      <div className="practice-result">
-                        <p>
-                          <span className={`score-badge ${scoreTone(reviewAttempt.result.score)}`}>
-                            {reviewAttempt.result.score}/100
-                          </span>
-                          {" "}Fonemi corretti (stima): {reviewAttempt.result.matched_phones}/{reviewAttempt.result.total_phones}
-                        </p>
-                        <p className="ipa"><span className="ipa-label">Atteso:</span> {reviewAttempt.result.expected_ipa}</p>
-                        <p className="ipa"><span className="ipa-label">Pronunciato:</span> {reviewAttempt.result.predicted_ipa}</p>
-                        <p className="muted small">Confronto fonetico automatico sui fonemi; non valuta l'accento né la prosodia.</p>
-                      </div>
+                      <PronunciationFeedback result={reviewAttempt.result} onRetry={toggleReviewRecording} />
                     )}
                     <div className="grades">
                       {[["Non ricordavo", 0], ["Difficile", 1], ["Bene", 2], ["Facile", 3]].map(([label, value]) => (

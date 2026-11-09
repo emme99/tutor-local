@@ -49,6 +49,8 @@ class Settings:
     # Valutazione fonetica della pronuncia (Wav2Vec2 XLSR-53): device "mps" (fallback "cpu")
     phonetic_model: str = _env("PHONETIC_MODEL", "facebook/wav2vec2-xlsr-53-espeak-cv-ft")
     phonetic_device: str = _env("PHONETIC_DEVICE", "mps")
+    phonetic_max_seconds: float = float(_env("PHONETIC_MAX_SECONDS", "20.0"))
+    phonetic_short_max_units: int = int(_env("PHONETIC_SHORT_MAX_UNITS", "8"))
 
     # TTS: endpoint OpenAI-compatible /audio/speech (es. il tuo openai-macos-stt-tts). Vuoto = nessun audio.
     tts_base_url: str = _env("TTS_BASE_URL", "")

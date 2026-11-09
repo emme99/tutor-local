@@ -92,6 +92,11 @@ def test_pronunciation_check(client, monkeypatch):
             "total_phones": 26,
             "expected_ipa": "aɪ w ʊ d l aɪ k ə k ɔ f i",
             "predicted_ipa": "aɪ w u d l aɪ k ə k ɔ f i",
+            "short_target": False,
+            "verdict": None,
+            "ops": [{"op": "match", "expected": "aɪ", "heard": "aɪ"}],
+            "words": [{"word": "I", "expected_ipa": "aɪ", "heard_ipa": "aɪ", "score": 100,
+                       "ops": [{"op": "match", "expected": "aɪ", "heard": "aɪ"}]}],
         }
 
     monkeypatch.setattr("app.main.phonetics.evaluate_pronunciation", fake_evaluate)
@@ -107,6 +112,42 @@ def test_pronunciation_check(client, monkeypatch):
     assert data["total_phones"] == 26
     assert data["expected_ipa"].startswith("aɪ")
     assert data["predicted_ipa"].startswith("aɪ")
+    assert data["short_target"] is False
+    assert data["verdict"] is None
+    assert len(data["ops"]) == 1
+    assert len(data["words"]) == 1
+    assert data["words"][0]["word"] == "I"
+
+
+def test_pronunciation_check_short_target(client, monkeypatch):
+    async def fake_evaluate(target, audio, lang="en", suffix=".webm"):
+        assert target == "towel"
+        return {
+            "expected": "towel",
+            "score": 70,
+            "matched_phones": 3,
+            "total_phones": 4,
+            "expected_ipa": "t aʊ ə l",
+            "predicted_ipa": "t a b ɔ l",
+            "short_target": True,
+            "verdict": "da_rivedere",
+            "ops": [
+                {"op": "match", "expected": "t", "heard": "t"},
+                {"op": "sub", "expected": "aʊ", "heard": "b"},
+            ],
+            "words": [{"word": "towel", "expected_ipa": "t aʊ ə l", "heard_ipa": "t a b ɔ l", "score": 70, "ops": []}],
+        }
+
+    monkeypatch.setattr("app.main.phonetics.evaluate_pronunciation", fake_evaluate)
+    response = client.post(
+        "/api/pronunciation-check",
+        data={"target": "towel"},
+        files={"audio": ("turn.webm", b"fake", "audio/webm")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["short_target"] is True
+    assert data["verdict"] == "da_rivedere"
 
 
 def test_help_returns_tagged_audio_segments(client, monkeypatch):
@@ -114,7 +155,7 @@ def test_help_returns_tagged_audio_segments(client, monkeypatch):
         return ('{"segments": [{"lang": "it", "text": "Ciao. "},'
                 '{"lang": "en", "text": "Hello."}]}', {})
 
-    async def fake_tts(text, lang):
+    async def fake_tts(text, lang, **kwargs):
         assert lang in ("it", "en")
         return b"audio", "audio/mpeg"
 

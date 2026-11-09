@@ -138,7 +138,7 @@ Esempio reale (en02, registrazione umana, score 82; IPA normalizzato per il conf
 - [x] Integrazione API end-to-end (`POST /api/pronunciation-check` reale, TestClient, registrazione `en02`):
       200 con score **82**, `matched_phones` 39/47; **3,9 s a freddo** (include caricamento modello), **0,10 s a caldo**;
       MPS ~1,26 GB allocati / ~2,2 GB driver, RSS ~590 MB. Build Vite ok.
-- [ ] Collaudo manuale in browser (suggested reply + drawer di ripasso): badge e IPA visibili, latenza percepita
+- [x] Collaudo manuale in browser (suggested reply + drawer di ripasso): badge e IPA visibili, latenza percepita
       < 2 s. *Unica verifica che richiede una persona davanti allo schermo.*
 - [x] Footprint stimato con i pesi su disco + misure reali: Qwen3.8-27B-Splash **16 GB** + Whisper MLX **~1,6 GB**
       + Wav2Vec2 **~2,2 GB** (driver MPS) ≈ **20 GB**, con margine per contesto/KV → **< 30 GB**. (Il runtime di
@@ -147,6 +147,227 @@ Esempio reale (en02, registrazione umana, score 82; IPA normalizzato per il conf
       della decisione con i dati del benchmark, §12 troubleshooting, §15 roadmap voce 1 → fatto), `.env.example`
       (`PHONETIC_MODEL`, `PHONETIC_DEVICE` già presenti), `GUIDA-STUDENTE.md` (score fonetico, badge, IPA, limiti,
       troubleshooting, checklist) e `README.md` (niente più riferimenti al confronto Whisper).
+### Fase 5 — Feedback per parola, calibrazione e validazione
+Obiettivo: passare da «un numero per la frase» a «dove sta l'errore», e validare lo score su dati nuovi.
+**Prerequisiti**: Fasi 0–4 complete (collaudo manuale fatto il 2026-11-09).
+
+**Esecuzione con contesto ridotto** (modello locale con poco contesto, es. Qwen3.8-27B in locale, o quota di
+token limitata). Questa fase è pensata per essere eseguita a piccoli pezzi:
+- **Una sessione per task**, sessione nuova per ciascuno, `git commit` a fine task. Se il contesto si esaurisce a
+  metà, commit «WIP» e marca il task con `[~]` indicando in una riga cosa manca.
+- **Non leggere tutto il piano**: `grep -n "^#### 5" PLAN-fonetica.md`, poi `sed -n '<da>,<a>p' PLAN-fonetica.md`
+  solo per il task da eseguire e per la sezione «Decisioni» di questa fase.
+- **Non aprire interi i file grandi** (`App.jsx`, `phonetics.py`, TECHNICAL.md): prima `grep -n` del simbolo o
+  della stringa da toccare, poi lettura a intervalli di righe. Ogni task elenca i «File da leggere».
+- **Documentazione per ultima**, in una sessione a sé (5.8), partendo da `git log --oneline` e
+  `git diff --stat` per sapere cosa è cambiato.
+- **Ordine consigliato**: 5.4c (solo CSS/markup) → 5.1 parte A (solo `align` e conteggi) → 5.4b →
+  5.1 parte B (parole e dittonghi) → 5.2 → 5.3 → 5.4 → 5.5 → il resto.
+- Prompt d'avvio suggerito: «Leggi solo il task <ID> e la sezione “Decisioni” di PLAN-fonetica.md (usa grep e
+  sed, non aprire tutto il file) e i file indicati sotto “File da leggere”. Prima di modificare, riassumi in 5
+  righe cosa farai. A fine task: file modificati, comandi eseguiti, esito dei test.»
+
+**Perché (dati misurati; ricalcolati applicando l'algoritmo di `phonetics.py` all'esempio en02 qui sopra: distanza
+10,0 su 55 simboli IPA atomici → 82, cioè il valore riportato dall'API. L'agente deve rileggere `phonetics.py` e
+rifare il conto prima di modificarlo):**
+- Su en02 il costo 10,0 si scompone in: 3,0 da sei sostituzioni vocaliche (0,5 ciascuna), 4,0 da quattro
+  cancellazioni, 2,0 da due inserzioni, 1,0 dall'unica sostituzione consonantica (`ð→d` in *with*).
+  L'errore consonantico tipico dell'italiano pesa ~1,8 punti su 100: invisibile nel numero.
+- Due delle quattro cancellazioni sono la `ʊ` di `oʊ→o` (*tomorrow*, *so*): un dittongo è due simboli, quindi
+  `oʊ→o` costa 1,0 (più di una sostituzione vocalica, 0,5) e pesa ~3,6 punti, il doppio dell'errore consonantico.
+  È una distorsione di progetto, non di modello: l'accento italiano monottonga spesso i dittonghi, ma non è
+  un errore grave quanto una consonante sbagliata.
+- `matched_phones` vale `round(total_phones × score / 100)` (39 = 47 × 0,82): `total_phones` conta i *token*
+  (47), mentre lo score usa i *simboli* (55). Non è un conteggio di fonemi allineati.
+- Lo score assoluto sul parlato accentato non è calibrato: frasi pulite mediana 69, minimo 47, e le soglie del
+  badge (70/45) sono tarate sugli stessi dati; per definizione di mediana, circa metà delle frasi corrette non
+  è verde. Gate e soglie sono stati fissati *dopo* aver visto i dati, sulle stesse 11 frasi e 8 coppie
+  (un parlante, una sessione): descrivono, non validano.
+- La sensibilità sulle coppie minime (delta +33,5) non si trasferisce alle frasi (drop mediano +8 per una parola
+  mancante, comparabile alla variabilità tra frasi): un errore puntuale in una frase intera non emerge dal numero.
+  Serve segnalare *quale parola/fonema*.
+
+**Decisioni**
+- Il riferimento resta il **testo** (`phonemizer`); nessun audio sintetico come riferimento *né come «tetto» di
+  calibrazione*: `say` è fuori dominio (32/100) ed espeak darebbe ~95 uniforme, quindi non calibrerebbe nulla sul
+  parlato umano. L'idea di progresso personale (5.6) usa le prese precedenti dello stesso allievo, non l'audio TTS.
+- **Nessuna chiamata all'LLM** in questa fase: consigli da tabella deterministica. Non si toccano `CONVERSATION`,
+  `SCHEMA`, `system_prompt`, quindi l'impronta di `llm_bench` resta invariata.
+- **Retrocompatibilità**: i campi esistenti di `PronunciationCheck` mantengono nome e significato (con la correzione
+  dichiarata in 5.1 per `matched_phones`/`total_phones`); i nuovi campi (`words`, `issues`) sono additivi.
+- **Protocollo di validazione**: i criteri di accettazione della 5.5 vanno scritti nel report **prima** di eseguire
+  il set nuovo e non si ritara nulla sul set nuovo. Le soglie si scelgono sul set A (registrazioni esistenti) e si
+  verificano sul set B (nuove registrazioni).
+- **Niente `torchaudio`** (decisione della Fase 0): per la 5.7 si implementa un Viterbi CTC minimo con `numpy`/`torch`.
+
+#### 5.1 Allineamento, parole e dittonghi (backend)
+- [x] Rileggi `phonetics.py` e `tests/test_phonetics.py`; riporta in 5 righe cosa trovi (funzioni esistenti,
+      punti in cui l'IPA è atomizzato, quali route/componenti usano `evaluate_pronunciation`).
+- [x] `align(expected, predicted)`: stessa programmazione dinamica di `distance`, con backtrace che restituisce
+      operazioni `match | sub | ins | del` con indici e costo. `distance` e `score` restano e devono dare gli stessi
+      valori di prima su coppie fisse (test di equivalenza; en02 → 82).
+- [x] Fonemizza **parola per parola** (`tokenizer.phonemize` su ogni parola), mantenendo la mappa
+      simbolo → parola; gestisci punteggiatura, contrazioni e parole che producono sequenza vuota. Regola
+      per le inserzioni: attribuite alla parola attesa precedente (o alla successiva se sono a inizio frase).
+- [x] **Dittonghi come unità** nell'allineamento: insieme dati `DIPHTHONGS` (almeno `oʊ`, `aɪ`, `eɪ`, `aʊ`, `ɔɪ`)
+      i cui token non si spezzano in simboli; sostituzione tra dittongo e vocale singola o tra dittonghi = costo
+      vocalico (0,5), non una cancellazione intera. **Cambia lo score di en02 e delle altre frasi**: documenta il
+      valore prima/dopo per tutte le frasi del set A (serve alla ritaratura in 5.5).
+- [x] `matched_phones` e `total_phones` calcolati dalle operazioni, con lo stesso denominatore dello score
+      (unità di allineamento attese); i nomi dei campi non cambiano.
+- [x] Risposta additiva: `words: [{word, expected_ipa, heard_ipa, score, ops: [{op, expected, heard}]}]`.
+- [x] `PHONETIC_MAX_SECONDS` (default 20): oltre, errore applicativo chiaro (stesso stile di `EmptyAudio`, HTTP 400)
+      invece di rischiare memoria/latenza anomale su MPS.
+- [x] Test puri senza modello, su sequenze IPA fisse: *ship/sheep*, *think/sink*, parola omessa, vocale aggiunta
+      (*street* → *istreet*), frase identica = 100, frase vuota, en02 (distanza e score pre-fix riprodotti, poi
+      il valore dopo il fix dei dittonghi).
+- [x] Nessun import di `torch`/`transformers` fuori dalle funzioni che li richiedono (la suite resta offline).
+
+#### 5.2 Normalizzazioni configurabili
+- [ ] Variabili in `config.py`, `.env.example` e TECHNICAL.md §8: `PHONETIC_STRICTNESS` = `lenient` (default) |
+      `strict`; `PHONETIC_VOWEL_COST` (default 0,5; in `strict` 1,0); `PHONETIC_KEEP_LENGTH` (default 0; in
+      `strict` 1, quindi `ː` non si toglie); `PHONETIC_DISTINGUISH_R` (default 0: `ɹ`/`r` equivalenti).
+- [ ] Con le impostazioni di default il comportamento resta quello attuale, **tranne** il trattamento dei
+      dittonghi dichiarato in 5.1.
+- [ ] Test per modalità: lo stesso confronto *ship/sheep* costa diversamente in `lenient` e in `strict`;
+      `PHONETIC_DISTINGUISH_R=1` distingue `ɹ` da `r`.
+
+#### 5.3 Consigli deterministici per l'italiano (`app/phonetic_tips.py`)
+- [x] Tabella **dati** (dict/JSON, non logica sparsa): per ogni sostituzione/omissione/inserzione tipica, nome del
+      suono, consiglio breve in italiano e peso di gravità. Almeno: `θ→t/s/f`, `ð→d/z`, `ɪ→i` e `ʊ→u`
+      (vocali tese/lasse), `h` omessa, vocale aggiunta prima di *s*+consonante, terminazioni *-ed* (`t`/`d`/`ɪd`)
+      omesse, vocale finale aggiunta dopo consonante (*dog* → *doga*), `ŋ→ŋg`/`n`, `ʒ/dʒ/ʃ/tʃ` scambiati.
+- [x] Funzione che prende le operazioni della 5.1 e restituisce **al massimo 2** `issues`:
+      `{word, expected, heard, tip_it, severity}`, ordinati per gravità (parola omessa e consonanti prima delle
+      vocali; in `lenient` non segnalare differenze vocaliche lievi). Formulazione prudente («sembra che…»): il
+      riconoscitore può sbagliare. Frase senza differenze significative → nessun `issue`.
+- [x] Aggiungi `issues` alla risposta (additivo). Nessuna chiamata all'LLM.
+- [x] Test per ogni voce della tabella e per il limite di 2; i testi italiani vanno rivisti dall'utente (H-5.3).
+
+#### 5.4 Interfaccia di feedback
+- [x] Componente dedicato (`frontend/src/PronunciationFeedback.jsx`, props → render) usato nei **due** punti
+      esistenti di `App.jsx` (risposta suggerita e drawer di ripasso), senza ristrutturare il resto del file.
+- [x] Parole in tre stati (ok / dubbio / da rivedere) derivati da `words` e `issues`, **non solo con il colore**
+      (anche icona o sottolineatura); toccando una parola compaiono IPA atteso/sentito e il consiglio; al massimo
+      2 consigli a schermo.
+- [x] Il numero globale diventa secondario; scala qualitativa con le soglie ricalibrate in 5.5 (fino ad allora
+      restano 70/45). Disclaimer: «indicazione automatica: può sbagliare; non valuta accento né prosodia».
+- [x] Stati d'errore esistenti invariati («non ho sentito nulla», modello non disponibile, audio troppo lungo).
+- [x] `npm run build` verde; collaudo manuale in browser (il collaudo della Fase 4 è già stato fatto: ripetere solo
+      per le parti modificate).
+
+#### 5.4b Scala per parole e frasi brevi
+**Perché (verificato nello screenshot del collaudo, 2026-11-09):** il ripasso di *tower/towel* mostra atteso
+`t aʊ əl`, pronunciato `t a b ɔ l`, badge **70/100 verde** e «Fonemi corretti (stima): 2/3». Applicando
+l'algoritmo attuale: 5 simboli attesi (`t a ʊ ə l`), `ʊ→b` (vocale→consonante) 1,0, `ə→ɔ` 0,5, distanza 1,5
+→ 1 − 1,5/5 = **70**. Su un bersaglio breve una sola consonante diversa basta per restare «verde»; le soglie
+70/45 sono state tarate su frasi da ~40–55 simboli e non valgono qui. «2/3» è il conteggio derivato descritto
+nell'allineamento 9.
+**Decisioni**: per i bersagli brevi la scala è **qualitativa e basata sulle operazioni di allineamento**, non su
+una percentuale. Nessuna eccezione ad hoc per parole specifiche (la sequenza `aʊ`+`əl` può produrre artefatti del
+riconoscitore): l'incertezza si comunica nel testo guida. Il campo `score` resta invariato.
+**File da leggere**: `backend/app/phonetics.py` (`evaluate_pronunciation`, `score`), `backend/app/schemas.py`
+(`PronunciationCheck`), `backend/tests/test_phonetics.py`, `backend/tests/test_api.py::test_pronunciation_check`;
+frontend: `grep -n "Fonemi corretti" frontend/src/App.jsx` (i due punti da modificare).
+- [x] **Dipendenza**: richiede `align()` della 5.1 (parte A: funzione e test di equivalenza). Se non c'è ancora,
+      eseguire prima quella parte.
+- [x] Configurazione `PHONETIC_SHORT_MAX_UNITS` (default 8, unità attese dopo la normalizzazione; valore da
+      tarare). Un bersaglio con questo numero di unità o meno è «breve» (parole singole, frasi cortissime).
+- [x] Funzione pura `verdict(ops)` (in `phonetics.py`, senza modello) con regole esplicite e testabili:
+      `ok` = nessuna differenza; `dubbio` = solo sostituzioni vocale↔vocale, nessuna inserzione/cancellazione;
+      `da_rivedere` = almeno una sostituzione consonantica, una sostituzione vocale↔consonante, o una
+      inserzione/cancellazione.
+- [x] Risposta **additiva**: `short_target: bool`, `verdict` (`"ok" | "dubbio" | "da_rivedere"`, `null` per i
+      bersagli lunghi fino alla 5.5) e `ops` (allineamento globale; la 5.1 lo riusa per costruire `words`).
+      `score`, `matched_phones`, `total_phones`, `expected_ipa`, `predicted_ipa` non cambiano nome.
+- [x] Interfaccia (nel componente della 5.4, oppure nei due punti di `App.jsx` se la 5.4 non è ancora fatta): per
+      i bersagli brevi **niente badge percentuale e niente «Fonemi corretti (stima)»**; badge testuale con icona
+      («✓ Ci sei» / «~ Dubbio» / «✗ Da rivedere», non solo colore) e le due righe IPA allineate tramite `ops`, con i
+      simboli diversi evidenziati (grassetto/sottolineatura oltre al colore) e `—` dove manca un simbolo; riga
+      «Differenze: ʊ→b, ə→ɔ».
+- [x] Testo guida sotto il badge per `da_rivedere` sui bersagli brevi: «Il riconoscitore può sbagliare sulle parole
+      brevi: riprova una volta e confronta.»; il pulsante «Ripeti» resta in evidenza.
+- [x] Per i bersagli lunghi il numero resta, in secondo piano, finché la 5.5 non ricalibra le soglie.
+- [x] Test (pytest, senza modello) su `verdict`: identico → ok; solo `ə→ɔ` → dubbio; `ʊ→b` (caso *towel*) →
+      da_rivedere; `ð→d` → da_rivedere; inserzione → da_rivedere; cancellazione → da_rivedere; confine di
+      `PHONETIC_SHORT_MAX_UNITS` (8 vs 9 unità). Test API con motore fonetico stubbato: nuovi campi presenti,
+      vecchi invariati.
+- [ ] **Accettazione**: il caso *tower/towel* (IPA dello screenshot, motore stubbato) restituisce
+      `short_target=true` e `verdict="da_rivedere"` e l'interfaccia non mostra alcun badge verde;
+      `pytest -q`, `ruff check app tests`, `npm run build` verdi. **Collaudo manuale**: ripasso con 2–3 parole
+      brevi (una giusta, una con consonante sbagliata, una con differenza vocalica).
+- [x] Documentazione (in 5.8 o a fine task): TECHNICAL.md §5, §9 e §10.3 (con il caso *towel* come motivazione),
+      `GUIDA-STUDENTE.md` (significato dei tre stati; perché sulle parole brevi non c'è la percentuale).
+
+#### 5.4c Layout dei drawer (nessun messaggio sotto il pannello)
+**Perché (verificato nello screenshot del collaudo, 2026-11-09):** con il drawer di ripasso aperto (finestra di
+circa 1100 px) il pannello si sovrappone alla colonna destra della chat. I messaggi dello studente, allineati a
+destra, risultano tagliati («Yesterday I went to the cinema w», «I saw a new», «Yes, it was») e anche il campo di
+scrittura in basso finisce sotto il pannello: proprio le frasi che l'allievo vuole confrontare con le correzioni.
+**Decisioni**: modifica limitata a CSS e al markup minimo; nessun refactoring di `App.jsx`, nessuna dipendenza
+nuova, nessun cambiamento di comportamento (apertura/chiusura, contenuti, stato del ripasso). Larghezza soglia
+(1000 px) e larghezza del pannello (360–420 px) sono proposte da regolare a occhio.
+**File da leggere**: `grep -rn "drawer" frontend/src` per trovare CSS e markup; poi solo gli intervalli di
+righe interessati.
+- [x] Riporta in 5 righe come sono posizionati oggi drawer e colonna chat (posizionamento, larghezza, z-index) e
+      quali drawer esistono (ripasso, eventuale aiuto in italiano): la correzione vale per tutti.
+- [x] Sopra la larghezza soglia: drawer **affiancato** nel layout (sidebar | chat con `flex: 1; min-width: 0` |
+      drawer a larghezza fissa), così la colonna chat si restringe e nulla finisce sotto; il campo di scrittura sta
+      nella stessa colonna della chat.
+- [x] Sotto la soglia: drawer come overlay (o bottom sheet) con sfondo oscurato, chiusura con clic fuori, tasto
+      `Esc` e pulsante ×; la chat non si sposta.
+- [x] Messaggi: `max-width` in percentuale della colonna e `overflow-wrap: anywhere`; i messaggi allineati a destra
+      restano allineati al bordo destro della colonna **visibile**.
+- [x] Aprire e chiudere il drawer non deve far saltare la posizione di scroll della chat (preserva `scrollTop`
+      se serve).
+- [ ] **Accettazione (collaudo manuale)**: a ~1400, ~1100 e ~800 px con il drawer aperto nessun messaggio e nessun
+      elemento del campo di scrittura è tagliato; chiusura con `Esc` e clic fuori; `npm run build` verde. Allegare
+      due screenshot a ~1100 px (drawer aperto e chiuso).
+
+#### 5.5 Banco di prova per parola e validazione su dati nuovi
+- [ ] Estendi `phonetic_bench/`: `cases_words.json` con, per ogni registrazione, `bad_words` (le parole in cui
+      c'è un errore noto: coppie `pron01–pron08` e gli errori già confermati da Whisper in en06/en07/en09) e le
+      prese pulite senza errori. Il runner misura **sensibilità per parola** (la parola con errore compare tra
+      le «da rivedere» o negli `issues`) e **falsi allarmi** (parole segnalate nelle prese pulite).
+- [ ] **Stabilità**: stessa frase registrata 3 volte nella stessa sessione; riporta la variazione dello score tra
+      prese (serve a decidere se ha senso mostrare differenze piccole, vedi 5.6).
+- [ ] **Set B**: nuova sessione di registrazioni (altro giorno, possibilmente altra voce o altro microfono; vedi
+      H-5.5) con errori deliberati tipici, non usata per tarare nulla.
+- [ ] **Prima** di eseguire il set B, scrivi nel report i criteri di accettazione (proposta da confermare:
+      sensibilità per parola ≥ 70 %; falsi allarmi mediani ≤ 1 parola per presa pulita; stabilità dello score
+      entro ±8 punti sulle 3 prese). Poi esegui e riporta i numeri, anche se negativi.
+- [ ] Ricalibra le soglie del badge/scala qualitativa sui dati del set A (es. con percentili delle prese pulite),
+      verificale sul set B e riportale in TECHNICAL.md §10.3. Impronta dei risultati come nelle altre misure
+      (modello, frasi, audio, parametri, strictness).
+- [ ] Confronto `lenient` / `strict` sugli stessi dati, con la decisione motivata.
+
+#### 5.6 (Opzionale) Progresso personale
+Solo se 5.5 mostra stabilità sufficiente tra prese; altrimenti **non adottare** (decisione dell'utente).
+- [ ] Tabella `pronunciation_attempts(id, ts, target_hash, target, score)` con migrazione idempotente
+      (`PRAGMA user_version`); si salvano solo punteggio e IPA, **mai l'audio**.
+- [ ] La risposta aggiunge `previous_best` (stessa frase); l'interfaccia mostra «+N rispetto alla volta scorsa»
+      solo se la differenza supera la variabilità misurata in 5.5.
+- [ ] Test su database temporaneo; nessun cambiamento ai default.
+
+#### 5.7 (Sperimentale, dietro flag) Allineamento forzato con confidenza per fonema
+- [ ] `PHONETIC_FORCED_ALIGN` (default 0). Dai logit (log-softmax) e dagli id dei fonemi attesi nel vocabolario
+      del tokenizer, un allineamento CTC forzato (Viterbi minimo, `numpy`/`torch`, senza `torchaudio`) dà una
+      confidenza per ogni fonema atteso. Fonemi assenti dal vocabolario (`<unk>`): segnalali e saltali.
+- [ ] Test del Viterbi su esempi piccoli con risultato noto; output aggiuntivo `phones: [{symbol, word,
+      confidence}]`, da usare solo come indizio («incerto») nei consigli.
+- [ ] Confronto con la decodifica libera nel banco di prova (sensibilità e falsi allarmi per parola). Si adotta
+      solo se migliora, per decisione dell'utente; altrimenti resta spento e documentato.
+
+#### 5.8 Documentazione e chiusura
+- [ ] TECHNICAL.md: §5 (campi `words` e `issues`, correzione di `matched_phones`/`total_phones`), §8 (variabili
+      `PHONETIC_*`), §9 (nuova interfaccia), §10.3 (risultati set A e B, soglie, effetto del fix dei dittonghi,
+      decisione `lenient`/`strict`), §11 (nuovo benchmark), §12 (troubleshooting: espeak-ng assente, checkpoint non
+      scaricabile, MPS non disponibile, audio troppo lungo), §14 (download del modello da Hugging Face; il modello
+      resta in memoria dopo il primo uso), §15 (roadmap).
+- [ ] `GUIDA-STUDENTE.md` (nuovo feedback per parola, scala qualitativa, limiti) e `README.md`.
+- [ ] `pytest -q`, `ruff check app tests` e build Vite verdi; **nessun numero di benchmark inventato o stimato**:
+      i valori in §10.3 sono quelli misurati dall'utente.
+
 
 ## Allineamenti rispetto al piano originale (cosa è cambiato e perché)
 

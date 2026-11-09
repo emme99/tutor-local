@@ -40,6 +40,28 @@ class HelpResponse(BaseModel):
     timings: dict[str, float] = Field(default_factory=dict)
 
 
+class AlignmentOp(BaseModel):
+    op: str
+    expected: str | None = None
+    heard: str | None = None
+
+
+class WordPronunciation(BaseModel):
+    word: str
+    expected_ipa: str
+    heard_ipa: str
+    score: int
+    ops: list[AlignmentOp] = Field(default_factory=list)
+
+
+class PronunciationIssue(BaseModel):
+    word: str
+    expected: str
+    heard: str
+    tip_it: str
+    severity: str  # "high" | "medium" | "low"
+
+
 class PronunciationCheck(BaseModel):
     expected: str
     score: int
@@ -47,6 +69,11 @@ class PronunciationCheck(BaseModel):
     total_phones: int
     expected_ipa: str
     predicted_ipa: str
+    short_target: bool = False
+    verdict: str | None = None
+    ops: list[AlignmentOp] = Field(default_factory=list)
+    words: list[WordPronunciation] = Field(default_factory=list)
+    issues: list[PronunciationIssue] = Field(default_factory=list)
 
 
 class ReviewItem(BaseModel):

@@ -47,3 +47,9 @@ class EmptyAudio(TutorError):
     """L'audio è troppo breve o silenzioso per essere valutato."""
 
     status_code = 400
+
+
+class AudioTooLong(TutorError):
+    """L'audio supera la durata massima consentita per la valutazione."""
+
+    status_code = 400
