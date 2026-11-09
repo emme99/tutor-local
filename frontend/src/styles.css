@@ -79,6 +79,12 @@ select:disabled { opacity: .5; }
 .practice-result { font-size: 13px; }
 .practice-result p { margin: 6px 0; }
 .practice-error { margin: 0; color: var(--danger); font-size: 13px; }
+.score-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 700; color: #fff; }
+.score-good { background: var(--ok); }
+.score-mid { background: #c08a00; }
+.score-low { background: var(--danger); }
+.ipa { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.5; word-break: break-word; }
+.ipa-label { color: var(--muted); font-weight: 600; }
 .review-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--note-border);
   background: var(--note); border-radius: 12px; }
 .review-prompt { font-size: 18px; font-weight: 600; line-height: 1.35; }

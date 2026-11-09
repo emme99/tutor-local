@@ -46,6 +46,10 @@ class Settings:
     audio_min_seconds: float = float(_env("AUDIO_MIN_SECONDS", "0.4"))
     audio_min_rms: float = float(_env("AUDIO_MIN_RMS", "0.004"))
 
+    # Valutazione fonetica della pronuncia (Wav2Vec2 XLSR-53): device "mps" (fallback "cpu")
+    phonetic_model: str = _env("PHONETIC_MODEL", "facebook/wav2vec2-xlsr-53-espeak-cv-ft")
+    phonetic_device: str = _env("PHONETIC_DEVICE", "mps")
+
     # TTS: endpoint OpenAI-compatible /audio/speech (es. il tuo openai-macos-stt-tts). Vuoto = nessun audio.
     tts_base_url: str = _env("TTS_BASE_URL", "")
     tts_api_key: str = _env("TTS_API_KEY", "local")

@@ -91,7 +91,7 @@ Barra laterale con le opzioni e chat a destra (tema chiaro/scuro automatico; sot
 2. ffmpeg converte a 16 kHz, Whisper trascrive (`stt` nei tempi).
 3. L'LLM riceve il prompt della modalità (`app/modes.py`) + gli ultimi turni e restituisce un JSON
    (`is_correct`, `corrected_sentence`, `corrections`, `reply`, `new_vocab`, `follow_up`). Se il JSON non è valido riprova una volta.
-4. Il TTS pronuncia `reply`. In conversazione e gioco di ruolo l'LLM fornisce anche `suggested_reply`, un esempio di risposta dell'allievo alla domanda successiva; la UI consente di ascoltarla e confrontare la ripetizione con Whisper. Errori e vocabolario vengono salvati in `data/tutor.db` (`/api/mistakes`, `/api/vocab`) e alimentano la coda di ripasso.
+4. Il TTS pronuncia `reply`. In conversazione e gioco di ruolo l'LLM fornisce anche `suggested_reply`, un esempio di risposta dell'allievo alla domanda successiva; la UI consente di ascoltarla e valutarne la ripetizione con il motore fonetico. Errori e vocabolario vengono salvati in `data/tutor.db` (`/api/mistakes`, `/api/vocab`) e alimentano la coda di ripasso.
 
 Il prompt dice al modello che l'input è una **trascrizione automatica**: non deve correggere punteggiatura o maiuscole
 né inseguire errori di riconoscimento. I casi `c07`/`c08` del benchmark verificano proprio questo.
@@ -101,8 +101,9 @@ né inseguire errori di riconoscimento. I casi `c07`/`c08` del benchmark verific
 - **🔁 Ripasso** (barra superiore): coda degli errori e dei vocaboli in scadenza, con quattro voti (Non ricordavo / Difficile /
   Bene / Facile). La programmazione è una versione semplificata di SM-2: un errore appena sbagliato torna dopo circa 10 minuti,
   mentre i voti positivi aumentano l'intervallo. Il badge mostra quanti elementi sono pronti.
-- Dopo la risposta puoi **ascoltare la pronuncia corretta** e **ripeterla**: il confronto con Whisper mostra le parole riconosciute
-  e le differenze. È un controllo lessicale, non fonetico, ma aiuta a distinguere un errore di forma da uno di pronuncia.
+- Dopo la risposta puoi **ascoltare la pronuncia corretta** e **ripeterla**: il motore fonetico (Wav2Vec2 XLSR-53 + `phonemizer`)
+  confronta i singoli suoni e mostra uno score 0–100, i fonemi stimati e le sequenze IPA attesa/pronunciata. Non valuta accento
+  né prosodia.
 - Gli elementi scaduti vengono richiamati anche nel prompt della conversazione (al massimo 3 errori e 3 vocaboli), solo quando
   l'occasione è naturale: il tutor non trasforma il dialogo in un test. Il benchmark non riceve questo blocco.
 - Nello stesso pannello compare il **riepilogo della sessione**: turni, correzioni e vocaboli deduplicati, letto dai turni salvati.
@@ -123,8 +124,8 @@ La suite usa un database temporaneo e provider finti: non tocca `data/tutor.db` 
 
 - **Latenza**: oggi una risposta arriva intera. Il passo successivo è lo streaming (WebSocket): far partire il TTS sul
   `reply` mentre il modello genera ancora le correzioni.
-- **Pronuncia**: non è valutata. Gemma non l'ha giudicata in modo affidabile nei test; serve un modulo fonemico separato.
-- Il confronto Whisper con la risposta suggerita aiuta a individuare parole omesse o diverse, ma non valuta i singoli suoni o l'accento.
+- **Pronuncia**: è valutata a livello di fonemi (score 0–100 e IPA), non di accento o prosodia. Il benchmark è su un solo
+  parlante con accento italiano: lo score assoluto non è calibrato come un giudizio umano. L'italiano è fuori v1.
 - **Clip lunghe**: Whisper le gestisce; i modelli audio-nativi con limite di 30 s no.
 - **Ripasso**: la coda e l'iniezione nel prompt sono attive; mancano livello adattivo e statistiche storiche.
 - **Thinking**: se il modello ragiona prima di rispondere la latenza esplode; disattivalo con `LLM_EXTRA_BODY` se il server lo permette.

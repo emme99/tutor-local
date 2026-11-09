@@ -43,13 +43,15 @@ sequenceDiagram
 | Interfaccia | React 18 + Vite | Browser | Un solo componente (`App.jsx`) + `vad.js` |
 | Orchestrator | FastAPI + uvicorn (Python ≥ 3.11) | Processo locale, porta 8010 | Serve anche il frontend compilato |
 | STT | `mlx-whisper`, `whisper-large-v3-turbo` | In-process nel backend (GPU Apple) | Alternativa: endpoint OpenAI-compatible |
+| Pronuncia | Wav2Vec2 XLSR-53 (CTC) + `phonemizer`/espeak-ng | In-process nel backend (PyTorch MPS) | Solo ripetizione: score 0–100, IPA atteso/predetto (§8) |
 | LLM | Gemma 4 26B-A4B (Ollama) — alternativa Qwen3.6-35B-A3B (Splash) | Server separato | `LLM_BASE_URL`, `LLM_MODEL` |
 | TTS | `openai-macos-stt-tts` basato su `say` e voci macOS | Servizio locale separato, porta 5050 | Facoltativo; voce selezionata separatamente per IT/EN |
 | Memoria | SQLite (`data/tutor.db`) | File locale | Turni, errori, vocabolario, coda di ripasso |
 
 Tempi misurati nell'app (turno tipico, Gemma 26B-A4B): **STT ≈ 0,55 s · LLM ≈ 0,9-1,1 s · TTS ≈ 1,0 s → ≈ 2,6 s** dalla fine
 del parlato alla voce del tutor. Un outlier a 6,9 s (LLM) è compatibile con il ricaricamento del modello da parte di Ollama
-dopo il timeout di inattività (vedi §12).
+dopo il timeout di inattività (vedi §12). Il controllo di pronuncia richiede **~0,1 s** dopo il primo caricamento del modello
+fonetico (~4 s a freddo).
 
 ## 3. Struttura del repository
 
@@ -69,6 +71,7 @@ backend/
     review.py                 scheduler puro del ripasso (versione semplificata di SM-2)
     errors.py                 eccezioni applicative con stato HTTP (LLM/STT/TTS/output)
     jsonparse.py              estrazione robusta del JSON dall'output dell'LLM (senza dipendenze)
+    phonetics.py              valutazione fonetica Wav2Vec2 XLSR-53 su MPS (§8)
     providers/stt.py          ffmpeg, filtro silenzio, backend mlx | openai
     providers/llm.py          client chat/completions, retry sul JSON non valido
     providers/tts.py          client /audio/speech
@@ -77,6 +80,7 @@ frontend/
   src/App.jsx                 interfaccia, registrazione, riproduzione, modalità, ripasso
   src/vad.js                  VAD a energia (stop automatico al silenzio)
 llm_bench/                    benchmark LLM per il compito del tutor (§11)
+phonetic_bench/               verifica ambiente e benchmark della valutazione fonetica (§8, §11)
 deploy/                       Dockerfile e compose (bozze non testate, §13)
 docs/TECHNICAL.md             questo file
 GUIDA-STUDENTE.md             guida pratica per lo studente (funzioni ed esempi)
@@ -159,7 +163,7 @@ I provider traducono timeout, errori di connessione e risposte HTTP non valide n
 messaggio dice quale servizio ha fallito. In `llm_bench` le stesse eccezioni restano errori del singolo caso, senza interrompere
 il benchmark. `llm_tok_s` = token generati / tempo LLM totale (include il prefill: sottostima la velocità pura).
 
-`POST /api/pronunciation-check` trascrive la registrazione in inglese con STT e allinea le parole riconosciute alla frase attesa. La risposta contiene `transcript`, `matched_words`, `total_words` e i gruppi di parole attese/riconosciute diversi. È un confronto lessicale automatico, non una valutazione fonetica o dell'accento.
+`POST /api/pronunciation-check` valuta la registrazione in inglese con il motore fonetico (§8): confronta l'IPA decodificato dall'audio con quello atteso del testo. La risposta (`PronunciationCheck`) contiene `score` (0–100), `matched_phones`/`total_phones`, `expected_ipa` e `predicted_ipa`. Audio breve/silenzioso → 400 `EmptyAudio`. È un confronto fonetico automatico, non una valutazione dell'accento o della prosodia.
 
 `POST /api/help` trascrive l'eventuale audio forzando l'italiano, passa gli ultimi turni `conversation` al LLM come contesto e
 chiede una risposta JSON segmentata per lingua: `{"segments": [{"lang": "it|en", "text": "..."}]}`. Le parti inglesi vengono
@@ -234,6 +238,8 @@ L'aggiunta di `suggested_reply` cambia prompt e schema: i risultati precedenti n
 | `STT_BASE_URL`, `STT_API_KEY`, `STT_API_MODEL` | — / `local` / `whisper-1` | Backend `openai` |
 | `STT_INITIAL_PROMPT` | vuoto | Vocabolario di contesto per Whisper (es. termini tecnici) |
 | `AUDIO_MIN_SECONDS`, `AUDIO_MIN_RMS` | `0.4`, `0.004` | Filtro anti-silenzio prima di Whisper |
+| `PHONETIC_MODEL` | `facebook/wav2vec2-xlsr-53-espeak-cv-ft` | Checkpoint Wav2Vec2 per la valutazione fonetica della pronuncia |
+| `PHONETIC_DEVICE` | `mps` | Device PyTorch (`cpu` se MPS non è disponibile) |
 | `TTS_BASE_URL` | vuoto | URL base del servizio locale, es. `http://127.0.0.1:5050/v1`. Vuoto = nessun audio |
 | `TTS_API_KEY` | `local` | Token inviato come Bearer; il servizio locale non lo usa per autenticarsi |
 | `TTS_MODEL` | `tts-1` | Campo richiesto dal protocollo; il servizio `say` lo accetta per compatibilità |
@@ -247,6 +253,52 @@ L'aggiunta di `suggested_reply` cambia prompt e schema: i risultati precedenti n
 Il provider TTS di tutor-local è compatibile con il servizio locale `openai-macos-stt-tts`: non richiede modifiche applicative. Avvia il servizio sulla stessa macchina, abilita HTTP nel suo `.env` (`USE_HTTP=True`) e configura `TTS_BASE_URL` in tutor-local. `TTS_VOICE_IT` e `TTS_VOICE_EN` selezionano le voci mappate dal servizio; installa in macOS voci appropriate per entrambe le lingue. Non è necessario caricare un modello neurale o campioni WAV.
 
 Il servizio usa `say` di macOS, quindi deve restare sull'host Mac e non può essere eseguito in un container Linux. Mantenerlo raggiungibile solo in locale: non espone autenticazione.
+
+### Motore fonetico della pronuncia
+
+La valutazione fonetica della ripetizione (roadmap §15.1) userà `facebook/wav2vec2-xlsr-53-espeak-cv-ft`
+(316 M parametri, ~1,2 GB) su PyTorch MPS. Dipendenze aggiunte e bloccate in `requirements*.txt`:
+`torch==2.14.1`, `transformers==5.22.2`, `phonemizer==3.6.0`. `phonemizer` è richiesto dal tokenizer del
+modello (`Wav2Vec2PhonemeCTCTokenizer`) già al caricamento. Dipendenza di sistema aggiuntiva: `espeak-ng`
+(`brew install espeak-ng`; su Linux il pacchetto `espeak-ng`), oltre a `ffmpeg`.
+
+Pipeline: l'IPA atteso viene da `phonemizer` (testo → espeak `en-us`) attraverso `tokenizer.phonemize()`,
+che separa già i singoli fonemi; quello predetto dalla decodifica CTC dell'audio a 16 kHz. Il greedy
+longest-match usato in fase 1 è stato rimosso perché confondeva token come `ju`/`uː`. Prima del confronto
+si normalizzano lunghezza (`ː`, `ˑ`) e allofoni noti (`ɹ→r`, `ɾ→t`, `ᵻ→ɪ`, `ɐ→ə`), poi si applica una
+Levenshtein **pesata sui simboli IPA atomici**: una sostituzione tra due vocali costa 0.5, tutto il resto
+1.0. Così le differenze di qualità vocalica dovute all'accento pesano meno degli errori consonantici
+(`θ→t`, `ð→d`) e delle parole mancanti. Score = `1 − distanza / len(atteso)`, arrotondato 0–100.
+
+`phonetic_bench/check_env.py` verifica la pipeline su audio sintetico espeak-ng (in-domain): **95/100**.
+La voce macOS `say` è fuori dominio (32/100) e **non** va usata come riferimento. `phonetic_bench/run_bench.py`
+misura invece il parlato umano reale (`stt-bench/recordings/mac`, accento italiano):
+
+| misura | risultato | gate |
+|---|---|---|
+| frasi pulite en01–en11 | mediana **69**, min 47 | ≥ 60 e min ≥ 40 |
+| coppie minime pron01–pron08 | **7/8** ordinate, delta mediano **+33.5** | ≥ 7/8 e delta ≥ 10 |
+| perturbazione (testo senza ultima parola) | **11/11** peggiorano, drop mediano **+8** | ≥ 9/11 e drop ≥ 5 |
+| latenza (clip ~5 s, dopo warm-up) | mediana **~0.12 s**, max ~0.16 s | < 1 s |
+| memoria | **~1.26 GB** MPS allocati, ~750 MB RSS | solo misura |
+
+Il gate di 90 resta valido solo per l'audio sintetico in-domain: sul parlato accentato con errori reali
+(confermati da Whisper: en06 `Thursday→Tuesday`, en07 finali, en09 nomi propri) la baseline è ~69. I gate
+relativi sono la prova che il motore discrimina; lo score assoluto non è calibrato come un giudizio umano.
+Risultati con impronta di modello/frasi/audio in `phonetic_bench/results/bench.json` e `report.md`.
+
+Verifica end-to-end dell'endpoint (fase 4, `POST /api/pronunciation-check` reale con la registrazione `en02`): 200 con
+score **82**, `matched_phones` 39/47; **3,9 s a freddo** (include download/caricamento del modello) e **0,10 s a caldo**;
+memoria **~1,26 GB** MPS allocati, ~2,2 GB driver, ~590 MB RSS.
+
+Il modulo `app/phonetics.py` espone `evaluate_pronunciation(target, audio, lang)` (score 0-100, numero di
+fonemi, IPA atteso/predetto), `text_to_ipa`, `audio_to_phonemes` e le funzioni pure `normalize`,
+`canonical`, `ipa_symbols`, `distance`, `score` (testate senza modello). `matched_phones` è una stima
+derivata dallo score (`round(total_phones × score / 100)`): lo score lavora sui simboli IPA atomici, il
+totale sui fonemi tokenizzati, quindi i due conteggi non coincidono sempre. Modello e processor si caricano
+alla prima chiamata e le inferenze sono serializzate da un lock; l'audio breve/silenzioso solleva
+`EmptyAudio` (HTTP 400). Dalla fase 3 l'endpoint `/api/pronunciation-check` usa direttamente questo modulo
+(§5); il vecchio confronto lessicale (`app/pronunciation.py`) è stato rimosso.
 
 ## 9. Frontend
 
@@ -266,13 +318,13 @@ Il servizio usa `say` di macOS, quindi deve restare sull'host Mac e non può ess
 - **Conversazione continua**: a fine riproduzione del tutor riparte la registrazione; un errore o «Nuova sessione» la interrompe.
 - **Aiuti per l'ascolto**: «Ascolta di nuovo», «Traduci» (`/api/translate`), «Solo ascolto» (testo nascosto finché non si clicca),
   🔊 per ogni frase suggerita nello scenario (`/api/speak`).
-- **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il confronto misura le parole riconosciute, non la qualità fonetica.
+- **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il risultato mostra uno score 0–100 con badge colorato (verde ≥ 70, giallo 45–69, rosso < 45), i fonemi stimati e le sequenze IPA attesa/pronunciata.
 - **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica. La risposta è segmentata per lingua: le parti inglesi usano la voce inglese, quelle italiane la voce italiana.
 - **Ripasso**: «🔁 Ripasso» apre un drawer con il badge degli elementi scaduti. Mostra un elemento alla volta (errore o vocabolo),
   «Mostra risposta», i quattro voti (Non ricordavo / Difficile / Bene / Facile) e, sotto, il riepilogo della sessione corrente
   (turni, correzioni, vocaboli). Il badge si aggiorna all'avvio e dopo ogni turno; gli elementi votati escono subito dalla coda.
   Dopo la risposta si può ascoltare la forma corretta (`/api/speak`) e ripeterla con `/api/pronunciation-check`, come nella pratica
-  della frase suggerita; il confronto è lessicale, non fonetico.
+  della frase suggerita; il confronto è fonetico (score e IPA).
 - **Nuova sessione**: oltre a resettare chat e testi, ferma le registrazioni in corso (turno e pratica), mette in pausa l'audio e
   azzera ripasso/aiuto/stato occupato. Le risposte asincrone di una sessione precedente vengono ignorate.
 - Il frontend mostra la «frase corretta» solo se ci sono correzioni.
@@ -310,6 +362,22 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
   Splash come alternativa più veloce (cambia solo `LLM_BASE_URL`/`LLM_MODEL`). Splash: motori MoE possono dare output diversi tra
   run a temperatura 0; serve un modello alla volta in memoria (36 GB).
 
+### 10.3 Valutazione fonetica della pronuncia (`phonetic_bench`)
+- **Motore scelto**: `facebook/wav2vec2-xlsr-53-espeak-cv-ft` (Wav2Vec2 XLSR-53 CTC, 316 M parametri) su PyTorch MPS.
+- **Riferimento = testo, non audio TTS**: `phonemizer`/espeak `en-us` produce l'IPA atteso. Su audio espeak-ng in-domain lo
+  score è **95/100**; sulla voce macOS `say` è **32/100** (fuori dominio per il modello), quindi `say` non è un riferimento valido.
+- **Perché non Whisper/difflib**: il confronto lessicale non vede i singoli fonemi (es. `ship`/`sheep`, `think`/`sink`); il
+  motore fonemico distingue i suoni e restituisce uno score 0–100 più le sequenze IPA.
+- **Scoring**: Levenshtein **pesata sui simboli IPA atomici** (sostituzione vocale-vocale 0.5, tutto il resto 1.0), dopo aver
+  normalizzato lunghezza (`ː`, `ˑ`) e allofoni (`ɹ→r`, `ɾ→t`, `ᵻ→ɪ`, `ɐ→ə`). Il greedy longest-match è stato scartato perché
+  sbagliava token come `ju`/`uː`; si usa `tokenizer.phonemize()`.
+- **Misure su 11 frasi umane** (accento italiano): mediana **69** (min 47); coppie minime **7/8** con delta mediano **+33.5**;
+  perturbazione **11/11** con drop mediano **+8**; latenza a caldo **~0.12 s**; memoria **~1.26 GB** MPS allocati / ~2.2 GB driver.
+- **Gate tarati**: mediana ≥ 60 e min ≥ 40; coppie ≥ 7/8 e delta ≥ 10; perturbazioni ≥ 9/11 e drop ≥ 5; latenza < 1 s. Il gate
+  di 90 resta valido solo per l'audio sintetico in-domain.
+- **Limiti noti**: un solo parlante; `cat/cut` non distinto in una take; lo score assoluto non è calibrato come un giudizio
+  umano; il motore non valuta accento né prosodia. L'italiano è fuori v1 (modello fine-tunato sull'inglese).
+
 ## 11. Strumenti di test
 
 - **`llm_bench`** (dalla cartella, con il venv del backend): `python run_llm_bench.py --models <nome>` (set base),
@@ -323,7 +391,14 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
   Semantica del punteggio: «corretto» = nessuna correzione mostrata (come nell'app).
 - **`stt-bench`** (progetto separato): `record.py` (registra le frasi dal microfono) e `run_bench.py` (WER/CER per categoria,
   clip lunghe, test di pronuncia). Ogni risultato salvato porta l'impronta dell'audio e si rifà se il file cambia.
-- Stato dei test automatici: la suite backend è in `backend/tests/` (38 test) e copre parser JSON, ripasso, memoria e migrazione,
+- **`phonetic_bench/check_env.py`** (dal venv del backend): verifica MPS e `ffmpeg`/`espeak-ng`, carica il modello fonetico
+  e calcola lo score di una frase sintetizzata (atteso 95/100 su espeak-ng). Da eseguire dopo un cambio di macchina o di dipendenze.
+- **`phonetic_bench/make_audio.py`**: registra dal microfono (`--record --ids en01 --out-dir phonetic_bench/audio`) o
+  sintetizza per smoke test (`--tts espeak|say`). Le registrazioni personali in `phonetic_bench/audio/` sono in `.gitignore`.
+- **`phonetic_bench/run_bench.py`**: benchmark su audio umano con i quattro gate di fase 2 (frasi pulite, coppie minime,
+  perturbazione, latenza/memoria). Salva `results/bench.json` (con impronta di modello/frasi/audio) e `results/report.md`;
+  esce con codice 1 se un gate non passa. Default: `--phrases stt-bench/phrases.json --audio-dir stt-bench/recordings/mac`.
+- Stato dei test automatici: la suite backend è in `backend/tests/` (46 test) e copre parser JSON, ripasso, memoria e migrazione,
   prompt/benchmark, orchestrator con provider finti e API con `TestClient`. Girano su un database temporaneo e non toccano
   `data/tutor.db` né i servizi reali. Comandi: `cd backend && .venv/bin/python -m pytest -q` e `.venv/bin/python -m ruff check app tests`.
   Il frontend e il flusso audio reale restano da collaudare a mano in browser.
@@ -341,6 +416,8 @@ Whisper su silenzio/clip brevissime inventa testo → filtro anti-silenzio (§4)
 | Il servizio usa una voce inattesa | Voce non installata o nome non mappato | Verificare la mappatura in `openai-macos-stt-tts` e le voci disponibili in macOS |
 | Voce inglese con pronuncia italiana | Voce inglese errata o parametro lingua non passato | Verificare `TTS_VOICE_EN`, la voce macOS associata e `language=en` nella richiesta |
 | «ffmpeg non trovato» | Dipendenza di sistema | `brew install ffmpeg` |
+| Errore del tokenizer fonetico («requires the phonemizer library») o del backend espeak | `phonemizer`/`espeak-ng` mancanti o non nel PATH | `brew install espeak-ng`, `pip install -r requirements.txt`, riavviare il backend |
+| Primo controllo di pronuncia molto lento | Download/caricamento del modello fonetico alla prima chiamata (cache HuggingFace, ~1,2 GB) | Attendere una volta; le chiamate successive usano il modello già in memoria |
 | Dopo un aggiornamento l'interfaccia non cambia | Il backend (porta 8010) serve una vecchia `frontend/dist` | `./run.sh` (ricompila da solo) oppure `cd frontend && npm run build`; la «build …» in fondo alla barra laterale dice quale versione gira |
 | Microfono negato | Permessi del browser/OS | Consentire il microfono (serve `localhost` o HTTPS) |
 | Memoria insufficiente / lentezza generale | Più modelli caricati insieme (36 GB) | Un solo LLM alla volta; limitare il contesto (`--max-context` in Splash) |
@@ -377,7 +454,7 @@ usare «Installa come app/aggiungi al Dock» (comportamento da verificare), più
 
 ## 15. Limiti noti e roadmap (in ordine di valore)
 
-1. **Valutazione fonetica della pronuncia**: la ripetizione guidata confronta già la trascrizione Whisper con la frase attesa, ma non valuta i singoli fonemi o l'accento. Per quello serve un modello fonemico (es. wav2vec2 per fonemi) e forced alignment; l'LLM può poi spiegare gli errori.
+1. **Valutazione fonetica della pronuncia** ✅: la ripetizione guidata usa ora un motore fonemico (Wav2Vec2 XLSR-53) e confronta l'IPA atteso con quello pronunciato, invece della trascrizione Whisper. Mostra score 0–100, badge colorato e sequenze IPA; non valuta ancora accento e prosodia in modo esplicito. Motore, benchmark e endpoint: `app/phonetics.py`, `phonetic_bench/run_bench.py`, `POST /api/pronunciation-check` (vedi §5 e §8).
 2. **Streaming** (WebSocket): far partire il TTS sulla `reply` mentre l'LLM genera ancora le correzioni; con ≈ 2,6 s di latenza
    attuale è secondario.
 3. **Ripasso adattivo**: coda, voti e iniezione nel prompt sono disponibili; mancano livello adattivo e statistiche storiche

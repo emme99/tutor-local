@@ -82,19 +82,31 @@ def test_speak_without_tts_is_503(client):
 
 
 def test_pronunciation_check(client, monkeypatch):
-    async def fake_stt(audio, language, suffix):
-        assert language == "en"
-        return "I would like coffee"
+    async def fake_evaluate(target, audio, lang="en", suffix=".webm"):
+        assert target == "I would like a coffee"
+        assert lang == "en"
+        return {
+            "expected": target,
+            "score": 82,
+            "matched_phones": 21,
+            "total_phones": 26,
+            "expected_ipa": "aɪ w ʊ d l aɪ k ə k ɔ f i",
+            "predicted_ipa": "aɪ w u d l aɪ k ə k ɔ f i",
+        }
 
-    monkeypatch.setattr("app.main.stt.transcribe", fake_stt)
+    monkeypatch.setattr("app.main.phonetics.evaluate_pronunciation", fake_evaluate)
     response = client.post(
         "/api/pronunciation-check",
         data={"target": "I would like a coffee"},
         files={"audio": ("turn.webm", b"fake", "audio/webm")},
     )
     assert response.status_code == 200
-    assert response.json()["matched_words"] == 4
-    assert response.json()["total_words"] == 5
+    data = response.json()
+    assert data["score"] == 82
+    assert data["matched_phones"] == 21
+    assert data["total_phones"] == 26
+    assert data["expected_ipa"].startswith("aɪ")
+    assert data["predicted_ipa"].startswith("aɪ")
 
 
 def test_help_returns_tagged_audio_segments(client, monkeypatch):

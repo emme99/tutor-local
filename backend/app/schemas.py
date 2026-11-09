@@ -40,17 +40,13 @@ class HelpResponse(BaseModel):
     timings: dict[str, float] = Field(default_factory=dict)
 
 
-class PronunciationDifference(BaseModel):
-    expected: list[str]
-    recognized: list[str]
-
-
 class PronunciationCheck(BaseModel):
     expected: str
-    transcript: str
-    matched_words: int
-    total_words: int
-    differences: list[PronunciationDifference] = Field(default_factory=list)
+    score: int
+    matched_phones: int
+    total_phones: int
+    expected_ipa: str
+    predicted_ipa: str
 
 
 class ReviewItem(BaseModel):

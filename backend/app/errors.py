@@ -41,3 +41,9 @@ class ModelOutputError(TutorError):
     """L'LLM ha risposto, ma non con il JSON del tutor."""
 
     status_code = 502
+
+
+class EmptyAudio(TutorError):
+    """L'audio è troppo breve o silenzioso per essere valutato."""
+
+    status_code = 400

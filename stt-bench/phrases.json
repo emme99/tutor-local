@@ -1,0 +1,295 @@
+{
+ "phrases": [
+  {
+   "id": "it01",
+   "lang": "it",
+   "category": "it_basic",
+   "text": "Buongiorno, vorrei prenotare un tavolo per quattro persone stasera alle otto.",
+   "ref_translation": "Good morning, I would like to book a table for four people tonight at eight."
+  },
+  {
+   "id": "it02",
+   "lang": "it",
+   "category": "it_basic",
+   "text": "Domani mattina ho una riunione con il cliente, quindi devo svegliarmi presto.",
+   "ref_translation": "Tomorrow morning I have a meeting with the client, so I have to wake up early."
+  },
+  {
+   "id": "it03",
+   "lang": "it",
+   "category": "it_basic",
+   "text": "Non ho capito bene la domanda, puoi ripeterla più lentamente?",
+   "ref_translation": "I didn't understand the question well, can you repeat it more slowly?"
+  },
+  {
+   "id": "it04",
+   "lang": "it",
+   "category": "it_numbers",
+   "text": "Il treno per Milano parte alle diciassette e quarantacinque dal binario dodici.",
+   "alt": [
+    "Il treno per Milano parte alle 17 e 45 dal binario 12.",
+    "Il treno per Milano parte alle 17:45 dal binario 12.",
+    "Il treno per Milano parte alle 17.45 dal binario 12."
+   ]
+  },
+  {
+   "id": "it05",
+   "lang": "it",
+   "category": "it_numbers",
+   "text": "Il totale è di milleduecentotrentaquattro euro e cinquanta centesimi.",
+   "alt": [
+    "Il totale è di 1234 euro e 50 centesimi.",
+    "Il totale è di 1.234 euro e 50 centesimi.",
+    "Il totale è di 1.234,50 euro.",
+    "Il totale è di 1234,50 euro.",
+    "Il totale è di € 1.234,50."
+   ]
+  },
+  {
+   "id": "it06",
+   "lang": "it",
+   "category": "it_numbers",
+   "text": "Il ventuno ottobre duemilaventisei ho un appuntamento dal dentista.",
+   "alt": [
+    "Il 21 ottobre 2026 ho un appuntamento dal dentista.",
+    "Il 21 ottobre duemilaventisei ho un appuntamento dal dentista."
+   ]
+  },
+  {
+   "id": "it07",
+   "lang": "it",
+   "category": "it_phonetics",
+   "text": "Gli gnocchi di Giovanni sono più buoni della pizza di Gianni."
+  },
+  {
+   "id": "it08",
+   "lang": "it",
+   "category": "it_phonetics",
+   "text": "Questo scoglio è bagnato, perciò fai attenzione a dove metti i piedi."
+  },
+  {
+   "id": "it09",
+   "lang": "it",
+   "category": "it_phonetics",
+   "text": "Mia sorella ha comprato due caffè, uno è per me e l'altro per la nonna."
+  },
+  {
+   "id": "it10",
+   "lang": "it",
+   "category": "it_phonetics",
+   "text": "L'altro ieri ho visto un'amica che non vedevo da un anno."
+  },
+  {
+   "id": "it11",
+   "lang": "it",
+   "category": "it_tech",
+   "text": "Ho installato Ollama sul MacBook e ora provo Gemma con FastAPI e React.",
+   "alt": [],
+   "ref_translation": "I installed Ollama on the MacBook and now I'm trying Gemma with FastAPI and React."
+  },
+  {
+   "id": "it12",
+   "lang": "it",
+   "category": "it_tech",
+   "text": "Il backend in Python usa un WebSocket per inviare l'audio al modello."
+  },
+  {
+   "id": "it13",
+   "lang": "it",
+   "category": "it_tech",
+   "text": "Apri il terminale e lancia il comando pip install, poi riavvia il server."
+  },
+  {
+   "id": "it14",
+   "lang": "it",
+   "category": "it_names",
+   "text": "Domenica andiamo a Firenze, poi a Siena e infine a Perugia."
+  },
+  {
+   "id": "it15",
+   "lang": "it",
+   "category": "it_names",
+   "text": "Ho letto un articolo di Anthropic e uno di Google DeepMind sui nuovi modelli."
+  },
+  {
+   "id": "it16",
+   "lang": "it",
+   "category": "it_spoken",
+   "text": "Eh, allora, boh, non so, forse domani ci vediamo, dipende da come va il lavoro."
+  },
+  {
+   "id": "it17",
+   "lang": "it",
+   "category": "it_spoken",
+   "text": "Davvero hai già finito? Non ci posso credere!"
+  },
+  {
+   "id": "it18",
+   "lang": "it",
+   "category": "it_spoken",
+   "text": "Non ho ancora pranzato né cenato, e ormai è tardi per entrambi."
+  },
+  {
+   "id": "it19",
+   "lang": "it",
+   "category": "it_long",
+   "text": "Ieri sera ho provato per la prima volta a usare un modello linguistico direttamente sul telefono, senza connessione a internet. Mi ha colpito la velocità delle risposte e soprattutto la possibilità di tradurre la voce in tempo reale. Ora vorrei capire se posso costruire qualcosa di simile sul computer, con un'interfaccia web e un tutor che mi corregga quando sbaglio."
+  },
+  {
+   "id": "it20",
+   "lang": "it",
+   "category": "it_over30",
+   "text": "Il progetto dovrebbe funzionare completamente in locale, senza inviare nessun dato a servizi esterni. Vorrei registrare la mia voce, ottenere la trascrizione e ricevere una risposta parlata con le correzioni grammaticali. Mi piacerebbe anche tenere traccia degli errori più frequenti e del vocabolario nuovo, per ripassarlo nei giorni successivi. Infine voglio confrontare diversi motori di riconoscimento vocale e scegliere quello che capisce meglio il mio accento, le parole tecniche e i nomi stranieri, anche quando parlo velocemente o con un po' di rumore in sottofondo."
+  },
+  {
+   "id": "it21",
+   "lang": "it",
+   "category": "it_pseudo",
+   "text": "Le parole inventate sono: stranfo, bliscare, gruppeto e cravidenza."
+  },
+  {
+   "id": "en01",
+   "lang": "en",
+   "category": "en_basic",
+   "text": "I would like to book a table for four people tonight at eight o'clock.",
+   "ref_translation": "Vorrei prenotare un tavolo per quattro persone stasera alle otto."
+  },
+  {
+   "id": "en02",
+   "lang": "en",
+   "category": "en_basic",
+   "text": "Tomorrow morning I have a meeting with the client, so I need to wake up early.",
+   "ref_translation": "Domani mattina ho una riunione con il cliente, quindi devo svegliarmi presto."
+  },
+  {
+   "id": "en03",
+   "lang": "en",
+   "category": "en_basic",
+   "text": "I didn't understand the question, could you repeat it more slowly, please?",
+   "ref_translation": "Non ho capito la domanda, potresti ripeterla più lentamente, per favore?"
+  },
+  {
+   "id": "en04",
+   "lang": "en",
+   "category": "en_numbers",
+   "text": "The train to London leaves at five forty-five from platform twelve.",
+   "alt": [
+    "The train to London leaves at 5:45 from platform 12.",
+    "The train to London leaves at 5.45 from platform 12.",
+    "The train to London leaves at 5 45 from platform 12."
+   ]
+  },
+  {
+   "id": "en05",
+   "lang": "en",
+   "category": "en_numbers",
+   "text": "The total is one thousand two hundred and thirty-four dollars and fifty cents.",
+   "alt": [
+    "The total is $1,234.50.",
+    "The total is 1,234 dollars and 50 cents.",
+    "The total is 1234 dollars and 50 cents."
+   ]
+  },
+  {
+   "id": "en06",
+   "lang": "en",
+   "category": "en_th",
+   "text": "I think that Thursday is the third day of the month, though they said something else."
+  },
+  {
+   "id": "en07",
+   "lang": "en",
+   "category": "en_endings",
+   "text": "She walked, talked, and laughed while they waited and worked all afternoon."
+  },
+  {
+   "id": "en08",
+   "lang": "en",
+   "category": "en_tech",
+   "text": "I installed Ollama on my MacBook and now I'm testing Gemma with FastAPI and React."
+  },
+  {
+   "id": "en09",
+   "lang": "en",
+   "category": "en_names",
+   "text": "Next summer we are going to Edinburgh, then to Worcester and finally to Leicester."
+  },
+  {
+   "id": "en10",
+   "lang": "en",
+   "category": "en_long",
+   "text": "Could you tell me whether the library closes early on Fridays, and if there's a quiet room I can use to study?",
+   "ref_translation": "Potresti dirmi se la biblioteca chiude presto il venerdì e se c'è una sala silenziosa dove posso studiare?"
+  },
+  {
+   "id": "en11",
+   "lang": "en",
+   "category": "en_pseudo",
+   "text": "The made-up words are: blorf, tramble, skindle and fompet."
+  },
+  {
+   "id": "pron01",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "The ship is leaving the harbor.",
+   "focus": "ship",
+   "bad_say": "sheep"
+  },
+  {
+   "id": "pron02",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "Just a little bit more, please.",
+   "focus": "bit",
+   "bad_say": "beat"
+  },
+  {
+   "id": "pron03",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "The glass is full.",
+   "focus": "full",
+   "bad_say": "fool"
+  },
+  {
+   "id": "pron04",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "I think it's a good idea.",
+   "focus": "think",
+   "bad_say": "sink"
+  },
+  {
+   "id": "pron05",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "This is my brother.",
+   "focus": "this",
+   "bad_say": "dis"
+  },
+  {
+   "id": "pron06",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "He has a hat in his hand.",
+   "focus": "hat",
+   "bad_say": "at"
+  },
+  {
+   "id": "pron07",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "I want to live here.",
+   "focus": "live",
+   "bad_say": "leave"
+  },
+  {
+   "id": "pron08",
+   "lang": "en",
+   "category": "en_pron",
+   "text": "She has a cat.",
+   "focus": "cat",
+   "bad_say": "cut"
+  }
+ ]
+}

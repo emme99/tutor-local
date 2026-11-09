@@ -92,7 +92,8 @@ Se la registrazione si ferma a metà frase, aumenta la pausa a 4 s oppure disatt
    - una risposta in inglese e una possibile frase per continuare.
 6. Puoi:
    - cliccare **🔊 Ascolta frase corretta** e ripeterla;
-   - cliccare **🔊 Ascolta e prova a rispondere** sulla frase suggerita e registrare il tuo tentativo;
+   - cliccare **🔊 Ascolta e prova a rispondere** sulla frase suggerita, registrare il tuo tentativo e ricevere uno
+     score fonetico con i suoni IPA attesi e pronunciati;
    - scrivere la risposta nel campo in basso e premere **Invia**.
 
 ### Cosa dire
@@ -259,11 +260,17 @@ conversazione. Non ti farà un'interrogazione e non trasformerà il dialogo in u
 Dopo **Mostra risposta** trovi due azioni:
 
 - **🔊 Ascolta frase corretta** (per gli errori) oppure **🔊 Ascolta termine** (per i vocaboli): senti la pronuncia inglese.
-- **● Ripeti**: registri la tua pronuncia e la confronti con la forma attesa. Il pannello mostra le parole riconosciute,
-  la trascrizione e le differenze.
+- **● Ripeti**: registri la tua pronuncia e la confronti con la forma attesa. Il pannello mostra un **punteggio di
+  accuratezza fonetica da 0 a 100**, i fonemi riconosciuti e le sequenze di suoni (IPA) attese e pronunciate.
 
-Il confronto è lessicale: misura quante parole sono state riconosciute, non valuta i singoli suoni o l'accento. È comunque
-utile per capire se il problema è ancora di pronuncia o se stai sbagliando la forma scritta.
+Il confronto è **fonetico**: analizza i singoli suoni della tua pronuncia, non solo le parole. Non valuta l'accento né la
+prosodia (ritmo e intonazione). Il colore del punteggio è un'indicazione rapida:
+
+- **verde (≥ 70)**: pronuncia chiara;
+- **giallo (45–69)**: qualche suono da migliorare;
+- **rosso (< 45)**: riascolta il modello e riprova, confrontando le due righe IPA.
+
+Il punteggio è automatico e non è un giudizio umano: serve a capire *quali suoni* migliorare, non a dare un voto.
 
 Consiglio: prima ascolta, poi ripeti, infine valuta con i voti qui sotto.
 
@@ -350,6 +357,8 @@ Usa «Nuova sessione» quando:
 | Nessuna voce del tutor | Il servizio TTS non è configurato o è spento | Il testo funziona lo stesso; segnala il problema |
 | L'interfaccia sembra vecchia | Il browser sta usando una build precedente | Ricarica; chi gestisce il tutor può eseguire `./run.sh` |
 | La trascrizione contiene una parola strana | Errore di riconoscimento vocale | Ripeti con più calma; il tutor non dovrebbe correggerlo come errore |
+| Il primo controllo di pronuncia richiede qualche secondo | La prima volta il modello fonetico viene caricato in memoria (~1,2 GB) | Attendi una volta; i tentativi successivi sono quasi immediati |
+| Punteggio di pronuncia più basso di quanto immaginassi | Il modello confronta i singoli fonemi, non il significato | Guarda le due righe IPA: spesso il problema è una consonante o una vocale specifica |
 
 ---
 
@@ -362,11 +371,12 @@ Usa «Nuova sessione» quando:
 - Adattare il livello.
 - Preparare frasi per situazioni concrete.
 - Riproporre gli errori nel tempo.
+- Dare un riscontro fonetico sulla ripetizione (score 0–100 e suoni IPA).
 - Fare conversazione senza inviare dati all'esterno.
 
 **Cosa non fa**
 
-- Non valuta la pronuncia nel dettaglio: il confronto con Whisper misura le parole riconosciute, non i singoli suoni o l'accento.
+- Non valuta accento e prosodia: confronta i singoli fonemi, ma non giudica ritmo, intonazione o quanto la voce suoni «naturale».
 - Non sostituisce un insegnante o una certificazione.
 - Può sbagliare la trascrizione, soprattutto con rumore o parole rare.
 - Non è un motore di ricerca: se non sa qualcosa, può comunque rispondere in modo plausibile. Verifica le regole importanti.
@@ -396,6 +406,7 @@ Tratta il database come dato personale: contiene le frasi che hai detto.
 - [ ] Ho ascoltato la correzione e la frase suggerita.
 - [ ] Ho aperto **Chiedi in italiano** e fatto una domanda.
 - [ ] Ho aperto **🔁 Ripasso** e valutato almeno un elemento.
+- [ ] Ho provato **● Ripeti** e guardato il punteggio fonetico e le righe IPA.
 - [ ] Ho letto il **Riepilogo sessione**.
 
 Buono studio!

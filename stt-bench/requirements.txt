@@ -1,0 +1,6 @@
+numpy
+sounddevice
+soundfile
+httpx
+mlx-vlm>=0.5.0
+mlx-whisper

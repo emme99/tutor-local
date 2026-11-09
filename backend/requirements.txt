@@ -5,3 +5,7 @@ pydantic==2.14.1
 httpx==0.28.1
 python-dotenv==1.2.4
 mlx-whisper==0.4.3
+# Valutazione fonetica della pronuncia (Wav2Vec2 XLSR-53 su MPS; richiede espeak-ng di sistema)
+torch==2.14.1
+transformers==5.22.2
+phonemizer==3.6.0

@@ -11,11 +11,10 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import memory, orchestrator
+from . import memory, orchestrator, phonetics
 from .config import settings
 from .errors import TutorError
-from .pronunciation import compare_transcript
-from .providers import llm, stt, tts
+from .providers import llm, tts
 from .schemas import (
     HelpResponse,
     PronunciationCheck,
@@ -162,13 +161,12 @@ async def speak(body: SpeakIn):
 
 @app.post("/api/pronunciation-check", response_model=PronunciationCheck)
 async def pronunciation_check(target: str = Form(...), audio: UploadFile = File(...)):
-    """Confronta la trascrizione di una ripetizione con la frase inglese attesa."""
+    """Valuta la pronuncia di una ripetizione rispetto alla frase inglese attesa."""
     if not target.strip() or len(target) > 500:
         raise HTTPException(400, "frase attesa non valida")
     data = await audio.read()
     suffix = Path(audio.filename or "turn.webm").suffix or ".webm"
-    transcript = await stt.transcribe(data, "en", suffix)
-    return compare_transcript(target, transcript)
+    return await phonetics.evaluate_pronunciation(target, data, "en", suffix)
 
 
 # Frontend compilato (npm run build): se presente viene servito qui, quindi basta un solo processo e Node non serve a runtime.

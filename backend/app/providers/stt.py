@@ -18,7 +18,8 @@ from ..config import settings
 from ..errors import STTUnavailable
 
 
-def _to_wav(data: bytes, suffix: str = ".webm") -> str:
+def to_wav(data: bytes, suffix: str = ".webm") -> str:
+    """Converte un audio del browser (webm/mp4/...) in WAV 16 kHz mono 16 bit."""
     src = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     src.write(data)
     src.close()
@@ -90,7 +91,7 @@ async def _transcribe_openai(wav: str, language: str | None) -> str:
 
 async def transcribe(audio: bytes, language: str | None, suffix: str = ".webm") -> str:
     """Ritorna il testo, oppure "" se l'audio è troppo breve/silenzioso."""
-    wav = await asyncio.to_thread(_to_wav, audio, suffix)
+    wav = await asyncio.to_thread(to_wav, audio, suffix)
     try:
         duration, rms = audio_stats(wav)
         if duration < settings.audio_min_seconds or rms < settings.audio_min_rms:

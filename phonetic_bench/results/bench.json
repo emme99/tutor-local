@@ -1,0 +1,328 @@
+{
+ "meta": {
+  "bench_version": "v1",
+  "model": "facebook/wav2vec2-xlsr-53-espeak-cv-ft",
+  "device": "mps",
+  "timestamp": "2026-11-09T09:20:21+00:00",
+  "phrases": "/Users/emme/Projects/VisualStudio/tutor-local/stt-bench/phrases.json",
+  "audio_dir": "/Users/emme/Projects/VisualStudio/tutor-local/stt-bench/recordings/mac",
+  "imprint": "5ce2018ed3199562",
+  "gates": {
+   "clean_median_score": 60,
+   "clean_min_score": 40,
+   "pairs_ordered": 7,
+   "pairs_median_delta": 10,
+   "perturbation_median_drop": 5,
+   "perturbation_ordered": 9,
+   "latency_median_sec": 1.0
+  },
+  "memory": {
+   "rss_mb": 747.9,
+   "mps_allocated_mb": 1263.9,
+   "mps_driver_mb": 2250.3
+  }
+ },
+ "clean": [
+  {
+   "id": "en01",
+   "category": "en_basic",
+   "expected": "I would like to book a table for four people tonight at eight o'clock.",
+   "score": 74,
+   "matched_phones": 29,
+   "total_phones": 39,
+   "expected_ipa": "aɪ w ʊ d l aɪ k t ə b ʊ k ə t eɪ b əl f ɔr f ɔr p i p əl t ə n aɪ t æ t eɪ t ə k l ɑ k",
+   "predicted_ipa": "aɪ w u l l aɪ k t u b u k a t e b o l f o r p i p o r t u n aɪ t a t e t o k l o k",
+   "sec": 0.115
+  },
+  {
+   "id": "en02",
+   "category": "en_basic",
+   "expected": "Tomorrow morning I have a meeting with the client, so I need to wake up early.",
+   "score": 82,
+   "matched_phones": 39,
+   "total_phones": 47,
+   "expected_ipa": "t ə m ɑ r oʊ m ɔr n ɪ ŋ aɪ h æ v ə m i t ɪ ŋ w ɪ ð ð ə k l aɪə n t s oʊ aɪ n i d t ə w eɪ k ʌ p ɜ l i",
+   "predicted_ipa": "t ʊ m ɔ r o m ɔ n ɪ ŋ aɪ h æ v m i t ɪ ŋ w ɪ d ð ɚ k l aɪ ə n t s o aɪ n i d t ʊ w eɪ k a p eɪ r l i",
+   "sec": 0.109
+  },
+  {
+   "id": "en03",
+   "category": "en_basic",
+   "expected": "I didn't understand the question, could you repeat it more slowly, please?",
+   "score": 79,
+   "matched_phones": 37,
+   "total_phones": 47,
+   "expected_ipa": "aɪ d ɪ d n t ʌ n d ɚ s t æ n d ð ə k w ɛ s tʃ ə n k ʊ d j u r ɪ p i t ɪ t m ɔr s l oʊ l i p l i z",
+   "predicted_ipa": "aɪ d i d ə n ʌ n d ə s t æ n d ə k w ɛ s t j ə n k o l j u r i p i t m o r s l o l i p l i z",
+   "sec": 0.11
+  },
+  {
+   "id": "en04",
+   "category": "en_numbers",
+   "expected": "The train to London leaves at five forty-five from platform twelve.",
+   "score": 86,
+   "matched_phones": 40,
+   "total_phones": 46,
+   "expected_ipa": "ð ə t r eɪ n t ə l ʌ n d ə n l i v z æ t f aɪ v f ɔr t i f aɪ v f r ʌ m p l æ t f ɔr m t w ɛ l v",
+   "predicted_ipa": "ð ə t r eɪ n t ʊ l ɔ n d ɔ l i v a t f aɪ v f ɔ r t i f aɪ v f ɔ r p l a t f ɔ r m t w ɛ l v",
+   "sec": 0.106
+  },
+  {
+   "id": "en05",
+   "category": "en_numbers",
+   "expected": "The total is one thousand two hundred and thirty-four dollars and fifty cents.",
+   "score": 66,
+   "matched_phones": 35,
+   "total_phones": 53,
+   "expected_ipa": "ð ə t oʊ t əl ɪ z w ʌ n θ aʊ z ə n d t u h ʌ n d r ɪ d æ n d θ ɜ t i f ɔr d ɑ l ɚ z æ n d f ɪ f t i s ɛ n t s",
+   "predicted_ipa": "ð ə t ɔ t ə l ɪ s t aʊ z ə n t u h a n d ə d æ n d t ɪ t ɪ f ɔ d d ɔ l ə s ɛ n f ɪ f t ɪ tʃ ɛ n t",
+   "sec": 0.122
+  },
+  {
+   "id": "en06",
+   "category": "en_th",
+   "expected": "I think that Thursday is the third day of the month, though they said something else.",
+   "score": 58,
+   "matched_phones": 27,
+   "total_phones": 46,
+   "expected_ipa": "aɪ θ ɪ ŋ k ð æ t θ ɜ z d eɪ ɪ z ð ə θ ɜ d d eɪ ʌ v ð ə m ʌ n θ ð oʊ ð eɪ s ɛ d s ʌ m θ ɪ ŋ ɛ l s",
+   "predicted_ipa": "aɪ t ɪ k ð ə t u z d eɪ ɪ z ð ə f y r d d eɪ ɔ v m ɑ̃ t t a t d eɪ s e d s ɔ m t a ŋ ɡ a j e s",
+   "sec": 0.129
+  },
+  {
+   "id": "en07",
+   "category": "en_endings",
+   "expected": "She walked, talked, and laughed while they waited and worked all afternoon.",
+   "score": 47,
+   "matched_phones": 20,
+   "total_phones": 43,
+   "expected_ipa": "ʃ i w ɔ k t t ɔ k t æ n d l æ f t w aɪ l ð eɪ w eɪ t ɪ d æ n d w ɜ k t ɔ l æ f t ɚ n u n",
+   "predicted_ipa": "ʃ i w ɔ l k ə d t o r k ə d æ n d l a ɡ ɪ d w i d eɪ w a n t w eɪ t ɪ d æ n d w ɔ r k ə d ɔ l a l f ʌ t ə r n ʊ n",
+   "sec": 0.126
+  },
+  {
+   "id": "en08",
+   "category": "en_tech",
+   "expected": "I installed Ollama on my MacBook and now I'm testing Gemma with FastAPI and React.",
+   "score": 69,
+   "matched_phones": 41,
+   "total_phones": 59,
+   "expected_ipa": "aɪ ɪ n s t ɔ l d ɑ l ɑ m ə ɔ n m aɪ m æ k b ʊ k æ n d n aʊ aɪ m t ɛ s t ɪ ŋ dʒ ɛ m ə w ɪ ð f æ s t eɪ p i aɪ æ n d r ɪ æ k t",
+   "predicted_ipa": "aɪ s t a l a d o l a m a o m aɪ b ɛ k b u k ɛ n d a n aʊ aɪ n t ɛ s t ɪ n dʒ ɛ m a w i l d f ɛ s t a p i ɛ n d r e a k t",
+   "sec": 0.127
+  },
+  {
+   "id": "en09",
+   "category": "en_names",
+   "expected": "Next summer we are going to Edinburgh, then to Worcester and finally to Leicester.",
+   "score": 54,
+   "matched_phones": 28,
+   "total_phones": 51,
+   "expected_ipa": "n ɛ k s t s ʌ m ɚ w i ɑr ɡ oʊ ɪ ŋ t ʊ ɛ d ɪ n b ʌ r ə ð ɛ n t ə w ʊ s t ɚ æ n d f aɪ n əl i t ə l ɛ s t ɚ",
+   "predicted_ipa": "n ɛ k s t s a m ə r w i a r ɡ o t u aɪ d ə n m b ʊ ɡ t u d ɛ n w ɔ tʃ ɛ s t ə ɛ n f i n a l i l aɪ ʃ s t ə r",
+   "sec": 0.125
+  },
+  {
+   "id": "en10",
+   "category": "en_long",
+   "expected": "Could you tell me whether the library closes early on Fridays, and if there's a quiet room I can use to study?",
+   "score": 65,
+   "matched_phones": 46,
+   "total_phones": 70,
+   "expected_ipa": "k ʊ d j u t ɛ l m i w ɛ ð ɚ ð ə l aɪ b r ɛ r i k l oʊ z ɪ z ɜ l i ɔ n f r aɪ d eɪ z æ n d ɪ f ð ɛr z ə k w aɪə t r u m aɪ k æ n j u z t ə s t ʌ d i",
+   "predicted_ipa": "k u l d o j u t ɛ l m i w ɛ ð ə r ð ə l aɪ b ə k l ɔ z ə d e l i ɔ f r i d eɪ ɛ n i v d ɛ r a k w aɪ ɛ t r u m a n k aɪ n u z t a d i",
+   "sec": 0.163
+  },
+  {
+   "id": "en11",
+   "category": "en_pseudo",
+   "expected": "The made-up words are: blorf, tramble, skindle and fompet.",
+   "score": 80,
+   "matched_phones": 30,
+   "total_phones": 37,
+   "expected_ipa": "ð ə m eɪ d ʌ p w ɜ d z ɑr b l ɔr f t r æ m b əl s k ɪ n d əl æ n d f ɑ m p ɪ t",
+   "predicted_ipa": "d ə m eɪ d ɛ p w o d a r b l ɔ f t r a m b ɔ l s k ɪ n d ɔ l ɛ n t f ɔ m p ə t",
+   "sec": 0.131
+  }
+ ],
+ "pairs": [
+  {
+   "id": "pron01",
+   "focus": "ship",
+   "bad_say": "sheep",
+   "ok_score": 76,
+   "bad_score": 18,
+   "delta": 58,
+   "ordered": true,
+   "ok_ipa": "ð ə ʃ ɪ p ɪ z l i v ɪ n d ɛ h a r b ʊ r",
+   "bad_ipa": "ʃ i p ʃ i p"
+  },
+  {
+   "id": "pron02",
+   "focus": "bit",
+   "bad_say": "beat",
+   "ok_score": 83,
+   "bad_score": 24,
+   "delta": 59,
+   "ordered": true,
+   "ok_ipa": "dʒ a s t a l t e l b i t m o r p l i z",
+   "bad_ipa": "b i t ə b i t"
+  },
+  {
+   "id": "pron03",
+   "focus": "full",
+   "bad_say": "fool",
+   "ok_score": 64,
+   "bad_score": 36,
+   "delta": 28,
+   "ordered": true,
+   "ok_ipa": "d ə ɡ l a s ɪ s f u l ə",
+   "bad_ipa": "f o l f o l"
+  },
+  {
+   "id": "pron04",
+   "focus": "think",
+   "bad_say": "sink",
+   "ok_score": 67,
+   "bad_score": 28,
+   "delta": 39,
+   "ordered": true,
+   "ok_ipa": "aɪ f i ŋ k i z ə a ɡ u d ʊ i d i ə",
+   "bad_ipa": "s i ŋ k ə ɛ n t f i ŋ k ə"
+  },
+  {
+   "id": "pron05",
+   "focus": "this",
+   "bad_say": "dis",
+   "ok_score": 85,
+   "bad_score": 15,
+   "delta": 70,
+   "ordered": true,
+   "ok_ipa": "d ɪ z ɪ z m aɪ b r ʌ ð ɚ",
+   "bad_ipa": "d i z d i"
+  },
+  {
+   "id": "pron06",
+   "focus": "hat",
+   "bad_say": "at",
+   "ok_score": 47,
+   "bad_score": 31,
+   "delta": 16,
+   "ordered": true,
+   "ok_ipa": "i z ɛ t ɪ n i z ə ɛ n d ə",
+   "bad_ipa": "h ɛ t h a t h ɛ t"
+  },
+  {
+   "id": "pron07",
+   "focus": "live",
+   "bad_say": "leave",
+   "ok_score": 71,
+   "bad_score": 68,
+   "delta": 3,
+   "ordered": true,
+   "ok_ipa": "aɪ w a n t ʊ l i v e r",
+   "bad_ipa": "aɪ w ɑ n t ʊ l aɪ v i ɛ r"
+  },
+  {
+   "id": "pron08",
+   "focus": "cat",
+   "bad_say": "cut",
+   "ok_score": 67,
+   "bad_score": 67,
+   "delta": 0,
+   "ordered": false,
+   "ok_ipa": "ʃ i e z k ɛ t",
+   "bad_ipa": "ʃ i ɛ z k a t"
+  }
+ ],
+ "perturbation": [
+  {
+   "id": "en01",
+   "target": "I would like to book a table for four people tonight at eight",
+   "score": 63,
+   "drop": 11
+  },
+  {
+   "id": "en02",
+   "target": "Tomorrow morning I have a meeting with the client, so I need to wake up",
+   "score": 76,
+   "drop": 6
+  },
+  {
+   "id": "en03",
+   "target": "I didn't understand the question, could you repeat it more slowly,",
+   "score": 72,
+   "drop": 7
+  },
+  {
+   "id": "en04",
+   "target": "The train to London leaves at five forty-five from platform",
+   "score": 74,
+   "drop": 12
+  },
+  {
+   "id": "en05",
+   "target": "The total is one thousand two hundred and thirty-four dollars and fifty",
+   "score": 59,
+   "drop": 7
+  },
+  {
+   "id": "en06",
+   "target": "I think that Thursday is the third day of the month, though they said something",
+   "score": 52,
+   "drop": 6
+  },
+  {
+   "id": "en07",
+   "target": "She walked, talked, and laughed while they waited and worked all",
+   "score": 23,
+   "drop": 24
+  },
+  {
+   "id": "en08",
+   "target": "I installed Ollama on my MacBook and now I'm testing Gemma with FastAPI and",
+   "score": 61,
+   "drop": 8
+  },
+  {
+   "id": "en09",
+   "target": "Next summer we are going to Edinburgh, then to Worcester and finally to",
+   "score": 46,
+   "drop": 8
+  },
+  {
+   "id": "en10",
+   "target": "Could you tell me whether the library closes early on Fridays, and if there's a quiet room I can use to",
+   "score": 64,
+   "drop": 1
+  },
+  {
+   "id": "en11",
+   "target": "The made-up words are: blorf, tramble, skindle and",
+   "score": 62,
+   "drop": 18
+  }
+ ],
+ "summary": {
+  "clean_n": 11,
+  "clean_median_score": 69,
+  "clean_min_score": 47,
+  "pairs_n": 8,
+  "pairs_ordered": 7,
+  "pairs_median_delta": 33.5,
+  "perturbation_ordered": 11,
+  "perturbation_median_drop": 8,
+  "latency_median_sec": 0.125,
+  "latency_max_sec": 0.163,
+  "gates": {
+   "clean_median_score": true,
+   "clean_min_score": true,
+   "pairs_ordered": true,
+   "pairs_median_delta": true,
+   "perturbation_ordered": true,
+   "perturbation_median_drop": true,
+   "latency_median_sec": true
+  },
+  "all_passed": true
+ }
+}

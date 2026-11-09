@@ -12,3 +12,6 @@ __pycache__/
 .DS_Store
 # risultati del benchmark LLM: sono piccoli e documentano le decisioni; togli il commento se non vuoi versionarli
 # llm_bench/results/
+# audio personale del benchmark fonetico (i risultati in phonetic_bench/results/ sono versionati)
+phonetic_bench/audio/
+stt-bench/recordings/mac

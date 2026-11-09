@@ -1,0 +1,320 @@
+{
+ "transcribe": {
+  "it01": {
+   "hyp": "Buongiorno, vorrei prenotare un tavolo per quattro persone stasera alle otto.",
+   "sec": 0.47,
+   "dur": 7.11,
+   "audio": "1e46741e669b"
+  },
+  "it02": {
+   "hyp": "Domani mattina ho una riunione con il cliente, quindi devo svegliarmi presto.",
+   "sec": 0.53,
+   "dur": 8.79,
+   "audio": "98cf6ed74a0b"
+  },
+  "it03": {
+   "hyp": "Non ho capito bene la domanda. Puoi ripeterla più lentamente?",
+   "sec": 0.39,
+   "dur": 5.19,
+   "audio": "f94a712a36ce"
+  },
+  "it04": {
+   "hyp": "il treno il treno per milano parte alle 17:45 dal binario 12",
+   "sec": 0.56,
+   "dur": 7.56,
+   "audio": "ced3fe8269a4"
+  },
+  "it05": {
+   "hyp": "Il totale è di €1234 e 50 centesimi.",
+   "sec": 0.45,
+   "dur": 5.77,
+   "audio": "20e026475fad"
+  },
+  "it06": {
+   "hyp": "Il 21 ottobre 2026 ho un appuntamento dal dentista.",
+   "sec": 0.44,
+   "dur": 4.57,
+   "audio": "a98d7d6e6712"
+  },
+  "it07": {
+   "hyp": "Gli gnocchi di Giovanni sono più buoni della pizza di Gianni.",
+   "sec": 0.37,
+   "dur": 4.25,
+   "audio": "4c544dd3802d"
+  },
+  "it08": {
+   "hyp": "Questo scoglio è bagnato, perciò fai attenzione dove metti i piedi.",
+   "sec": 0.46,
+   "dur": 6.19,
+   "audio": "d4c243c8855b"
+  },
+  "it09": {
+   "hyp": "Mia sorella ha comprato due caffè, uno è per me, l'altro è per la nonna.",
+   "sec": 0.52,
+   "dur": 5.86,
+   "audio": "078399c0bfb5"
+  },
+  "it10": {
+   "hyp": "L'altro ieri ho visto un'amica che non vedevo da un anno.",
+   "sec": 0.43,
+   "dur": 4.28,
+   "audio": "41ed4c8c0a90"
+  },
+  "it11": {
+   "hyp": "Ho installato Llama sul MacBook e ora provo Gemma con FastAPI in React.",
+   "sec": 0.44,
+   "dur": 5.68,
+   "audio": "1db779d3bf6f"
+  },
+  "it12": {
+   "hyp": "Il backend in Python usa web socket per inviare l'audio al modem.",
+   "sec": 0.42,
+   "dur": 4.83,
+   "audio": "43c04227e75a"
+  },
+  "it13": {
+   "hyp": "Apri il terminale e lancia il comando piplistol, poi riavvia il server.",
+   "sec": 0.51,
+   "dur": 6.52,
+   "audio": "493376e85ee3"
+  },
+  "it14": {
+   "hyp": "domenica andiamo a firenze poi a siena e infine a perugia",
+   "sec": 0.41,
+   "dur": 4.63,
+   "audio": "4f40d1a04237"
+  },
+  "it15": {
+   "hyp": "Ho letto un articolo di Anthropik e uno di Google Deep Mind sui nuovi modelli.",
+   "sec": 0.47,
+   "dur": 6.98,
+   "audio": "c08c0d22a8b0"
+  },
+  "it16": {
+   "hyp": "Eh, allora boh, non so. Forse ci vediamo, dipende da come va il lavoro.",
+   "sec": 0.49,
+   "dur": 6.01,
+   "audio": "c4d8942d4046"
+  },
+  "it17": {
+   "hyp": "Davvero è già finito, non ci posso credere.",
+   "sec": 0.36,
+   "dur": 4.48,
+   "audio": "27a36787e8b5"
+  },
+  "it18": {
+   "hyp": "Non ancora apprezzato, necenato e ormai è tardi per entrambi.",
+   "sec": 0.44,
+   "dur": 6.07,
+   "audio": "9bd95ced3db8"
+  },
+  "it19": {
+   "hyp": "Ieri sera, per la prima volta ho provato a usare un modello linguistico direttamente sul telefono, senza connessione a Internet. Mi ha colpito la velocità delle risposte e soprattutto la possibilità di tradurre la voce in tempo reale. Ora vorrei capire se è possibile costruire qualcosa di simile sul computer, con un'interfaccia web e un tutor che mi corregga quando sbaglio.",
+   "sec": 1.67,
+   "dur": 24.45,
+   "audio": "3e87ab54c73c"
+  },
+  "it20": {
+   "hyp": "Il progetto dovrebbe funzionare completamente in locale, senza inviare nessun dato a servizi esterni. Vorrei registrare la mia voce, ottenere la trascrizione e ricevere una risposta parlata con le correzioni grammaticali. Mi piacerebbe anche tenere traccia degli errori più frequenti e del vocabolario nuovo per ripassarlo nei giorni successivi. Infine, voglio confrontare diversi motori di riconoscimento vocale e scegliere quello che capisce meglio il mio accento.",
+   "sec": 1.97,
+   "dur": 37.9,
+   "audio": "b99e143f2d15"
+  },
+  "it21": {
+   "hyp": "Le parole inventate sono stranfo, bliscare, gruppetto e cravidenza.",
+   "sec": 0.53,
+   "dur": 8.42,
+   "audio": "8ff15764dde1"
+  },
+  "en01": {
+   "hyp": "I would like to book a table for people tonight at eight o'clock.",
+   "sec": 0.49,
+   "dur": 9.49,
+   "audio": "4e0bc00cbff2"
+  },
+  "en02": {
+   "hyp": "Tomorrow morning I have meeting with the client so I need to wake up early.",
+   "sec": 0.43,
+   "dur": 6.32,
+   "audio": "bd364b245e37"
+  },
+  "en03": {
+   "hyp": "I didn't understand the question could you repeat more slowly please",
+   "sec": 0.39,
+   "dur": 6.09,
+   "audio": "34217779eaf0"
+  },
+  "en04": {
+   "hyp": "The train to London leaves at 5:45 for platform 12.",
+   "sec": 0.45,
+   "dur": 6.29,
+   "audio": "b3f5e1fe7e09"
+  },
+  "en05": {
+   "hyp": "The total is $1,234 and 50 cent.",
+   "sec": 0.45,
+   "dur": 7.73,
+   "audio": "05479f348287"
+  },
+  "en06": {
+   "hyp": "I think the Tuesday is the third day of March. Thought they said something, guess.",
+   "sec": 0.52,
+   "dur": 9.26,
+   "audio": "950dc7a55578"
+  },
+  "en07": {
+   "hyp": "She worked, talked, and laughed. We day want waited and worked all afternoon.",
+   "sec": 0.49,
+   "dur": 8.7,
+   "audio": "de1423dd60d6"
+  },
+  "en08": {
+   "hyp": "I install the dolama or my backup and now I instain jema with first happy and react.",
+   "sec": 0.55,
+   "dur": 8.34,
+   "audio": "d92292945425"
+  },
+  "en09": {
+   "hyp": "Next summer we are going to Edinburgh to then Worcester and finally Leicester.",
+   "sec": 0.43,
+   "dur": 7.85,
+   "audio": "86989477334f"
+  },
+  "en10": {
+   "hyp": "Could you tell me whether the river closes at early on Friday and if there a quiet room I can use study",
+   "sec": 0.64,
+   "dur": 13.09,
+   "audio": "e286925037cf"
+  },
+  "en11": {
+   "hyp": "The midap word are bluffer, tramble, skindle and fompet.",
+   "sec": 0.5,
+   "dur": 9.11,
+   "audio": "59faa8273fd9"
+  },
+  "pron01": {
+   "hyp": "ship ship",
+   "sec": 0.32,
+   "dur": 11.15,
+   "audio": "467da84a07f4"
+  },
+  "pron02": {
+   "hyp": "Bit bit",
+   "sec": 0.21,
+   "dur": 5.0,
+   "audio": "4d589c8814cf"
+  },
+  "pron03": {
+   "hyp": "full full",
+   "sec": 0.21,
+   "dur": 4.28,
+   "audio": "372abb236fe8"
+  },
+  "pron04": {
+   "hyp": "Sink and finken.",
+   "sec": 0.23,
+   "dur": 3.07,
+   "audio": "d4234d8db75f"
+  },
+  "pron05": {
+   "hyp": "This these",
+   "sec": 0.19,
+   "dur": 3.37,
+   "audio": "2632d4b78cfa"
+  },
+  "pron06": {
+   "hyp": "hat hat hat",
+   "sec": 0.21,
+   "dur": 3.8,
+   "audio": "939eec29ee77"
+  },
+  "pron07": {
+   "hyp": "I went to live here.",
+   "sec": 0.25,
+   "dur": 3.72,
+   "audio": "994eee680167"
+  },
+  "pron08": {
+   "hyp": "She has cut.",
+   "sec": 0.2,
+   "dur": 2.85,
+   "audio": "785c99dc512b"
+  }
+ },
+ "translate": {
+  "it01": {
+   "hyp": "Hello, I would like to book a table for four people this evening at 8:00.",
+   "audio": "1e46741e669b"
+  },
+  "it02": {
+   "hyp": "Tomorrow morning I have a meeting with the client, so I have to wake up early.",
+   "audio": "98cf6ed74a0b"
+  },
+  "it03": {
+   "hyp": "Don't I understand the question well? Can you repeat it more slowly?",
+   "audio": "f94a712a36ce"
+  },
+  "it11": {
+   "hyp": "I installed Thalamus on my book and now I am trying Gemma with FastApi in React.",
+   "audio": "1db779d3bf6f"
+  },
+  "en01": {
+   "hyp": "Vorrei prenotare un tavolo per due stasera alle otto.",
+   "audio": "4e0bc00cbff2"
+  },
+  "en02": {
+   "hyp": "Domani mattina ho un incontro col cliente, quindi devo alzarmi presto.",
+   "audio": "bd364b245e37"
+  },
+  "en03": {
+   "hyp": "I didn't understand the question. Could you repeat more slowly, please?",
+   "audio": "34217779eaf0"
+  },
+  "en10": {
+   "hyp": "Could you tell me whether the library closes early on Friday and if there a quiet room I can use study?",
+   "audio": "e286925037cf"
+  }
+ },
+ "pron": {
+  "pron01": {
+   "bad": "ship",
+   "ok": "harbor",
+   "audio": "467da84a07f4120d7aa92f85"
+  },
+  "pron02": {
+   "bad": "bit, please",
+   "ok": "more",
+   "audio": "4d589c8814cfdd44936ddf72"
+  },
+  "pron03": {
+   "bad": "full",
+   "ok": "full",
+   "audio": "372abb236fe8c205f9bc2689"
+  },
+  "pron04": {
+   "bad": "think",
+   "ok": "think,idea",
+   "audio": "d4234d8db75fb43ca2aa8d61"
+  },
+  "pron05": {
+   "bad": "this",
+   "ok": "brother",
+   "audio": "2632d4b78cfac586bcc7d1f5"
+  },
+  "pron06": {
+   "bad": "hat",
+   "ok": "isend",
+   "audio": "939eec29ee7715c1ca605116"
+  },
+  "pron07": {
+   "bad": "here",
+   "ok": "here",
+   "audio": "994eee6801670e85b2390fd9"
+  },
+  "pron08": {
+   "bad": "cat",
+   "ok": "cat",
+   "audio": "785c99dc512b02548e4095bf"
+  }
+ }
+}

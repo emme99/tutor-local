@@ -8,6 +8,13 @@ function reviewSpeechText(item) {
   return item?.kind === "mistake" ? item.answer : item.prompt;
 }
 
+function scoreTone(score) {
+  // Soglie tarate sul parlato accentato reale (fase 2): "buono" ~70, non ~90.
+  if (score >= 70) return "score-good";
+  if (score >= 45) return "score-mid";
+  return "score-low";
+}
+
 export default function App() {
   const [session, setSession] = useState(() => crypto.randomUUID());
   const [mode, setMode] = useState("conversation");
@@ -745,17 +752,15 @@ export default function App() {
                         {practice.error && <p className="practice-error">{practice.error}</p>}
                         {practice.result && (
                           <div className="practice-result">
-                            <b>Parole riconosciute: {practice.result.matched_words}/{practice.result.total_words}</b>
-                            {practice.result.transcript
-                              ? <p>Ho sentito: {practice.result.transcript}</p>
-                              : <p>Non ho riconosciuto parlato: riprova con la frase completa.</p>}
-                            {practice.result.differences.map((difference, index) => (
-                              <p key={index}>
-                                Atteso: <b>{difference.expected.join(" ") || "(nessuna parola)"}</b>
-                                {" · "}Riconosciuto: <b>{difference.recognized.join(" ") || "(omesso)"}</b>
-                              </p>
-                            ))}
-                            <p className="muted small">Confronto automatico della trascrizione, non una valutazione fonetica dei singoli suoni.</p>
+                            <p>
+                              <span className={`score-badge ${scoreTone(practice.result.score)}`}>
+                                {practice.result.score}/100
+                              </span>
+                              {" "}Fonemi corretti (stima): {practice.result.matched_phones}/{practice.result.total_phones}
+                            </p>
+                            <p className="ipa"><span className="ipa-label">Atteso:</span> {practice.result.expected_ipa}</p>
+                            <p className="ipa"><span className="ipa-label">Pronunciato:</span> {practice.result.predicted_ipa}</p>
+                            <p className="muted small">Confronto fonetico automatico sui fonemi; non valuta l'accento né la prosodia.</p>
                           </div>
                         )}
                       </div>
@@ -919,17 +924,15 @@ export default function App() {
                     {reviewAttempt?.error && <p className="practice-error">{reviewAttempt.error}</p>}
                     {reviewAttempt?.result && (
                       <div className="practice-result">
-                        <b>Parole riconosciute: {reviewAttempt.result.matched_words}/{reviewAttempt.result.total_words}</b>
-                        {reviewAttempt.result.transcript
-                          ? <p>Ho sentito: {reviewAttempt.result.transcript}</p>
-                          : <p>Non ho riconosciuto parlato: riprova con la frase completa.</p>}
-                        {reviewAttempt.result.differences.map((difference, index) => (
-                          <p key={index}>
-                            Atteso: <b>{difference.expected.join(" ") || "(nessuna parola)"}</b>
-                            {" · "}Riconosciuto: <b>{difference.recognized.join(" ") || "(omesso)"}</b>
-                          </p>
-                        ))}
-                        <p className="muted small">Confronto automatico della trascrizione, non una valutazione fonetica dei singoli suoni.</p>
+                        <p>
+                          <span className={`score-badge ${scoreTone(reviewAttempt.result.score)}`}>
+                            {reviewAttempt.result.score}/100
+                          </span>
+                          {" "}Fonemi corretti (stima): {reviewAttempt.result.matched_phones}/{reviewAttempt.result.total_phones}
+                        </p>
+                        <p className="ipa"><span className="ipa-label">Atteso:</span> {reviewAttempt.result.expected_ipa}</p>
+                        <p className="ipa"><span className="ipa-label">Pronunciato:</span> {reviewAttempt.result.predicted_ipa}</p>
+                        <p className="muted small">Confronto fonetico automatico sui fonemi; non valuta l'accento né la prosodia.</p>
                       </div>
                     )}
                     <div className="grades">

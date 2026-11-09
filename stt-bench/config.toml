@@ -1,0 +1,41 @@
+# Motori da confrontare. Commenta/aggiungi a piacere.
+# I nomi tra [engines.xxx] compaiono nel report.
+
+# Il tuo servizio openai-macos-stt-tts (adatta porta e prefisso)
+[engines.mio_stt]
+type = "openai_stt"
+base_url = "http://localhost:8000/v1"
+model = "whisper-1"
+api_key = "local"
+send_language = true
+
+# Whisper su MLX, come riferimento
+[engines.whisper_turbo]
+type = "mlx_whisper"
+model = "mlx-community/whisper-large-v3-turbo"
+# initial_prompt = "Conversazione in italiano con termini tecnici: Ollama, FastAPI, React."
+
+# Gemma 4 E4B su MLX: due varianti di prompt sullo stesso modello
+# (richiede mlx-vlm >= 0.5.0: le versioni 0.4.x corrompevano l'audio tower)
+[engines.gemma_plain]
+type = "gemma_mlx"
+model = "mlx-community/gemma-4-e4b-it-4bit"   # prova anche la variante bf16 se hai RAM
+prompt_style = "plain"
+
+[engines.gemma_verbatim]
+type = "gemma_mlx"
+model = "mlx-community/gemma-4-e4b-it-4bit"
+prompt_style = "verbatim"
+
+# Gemma servito da llama-server / LM Studio (chat completions con input_audio)
+# [engines.gemma_server]
+# type = "gemma_openai"
+# base_url = "http://localhost:8080/v1"
+# model = "gemma-4-e4b-it"
+# prompt_style = "plain"
+
+# Box su S26 Ultra: risultati inseriti a mano.
+# Crea il file con:  python run_bench.py --export-template box
+[engines.box_s26]
+type = "manual"
+csv = "manual/box.csv"
