@@ -13,7 +13,7 @@ def enabled() -> bool:
     return bool(settings.tts_base_url)
 
 
-async def speak(text: str, lang: str) -> tuple[bytes, str] | None:
+async def speak(text: str, lang: str, speed: float = 1.0) -> tuple[bytes, str] | None:
     global _client
     if not enabled() or not text.strip():
         return None
@@ -24,7 +24,7 @@ async def speak(text: str, lang: str) -> tuple[bytes, str] | None:
         r = await _client.post(
             settings.tts_base_url.rstrip("/") + "/audio/speech",
             json={"model": settings.tts_model, "input": text, "voice": voice, "language": lang,
-                  "response_format": settings.tts_format},
+                  "response_format": settings.tts_format, "speed": speed if lang == "en" else 1.0},
             headers={"Authorization": f"Bearer {settings.tts_api_key}"},
         )
         r.raise_for_status()

@@ -29,7 +29,8 @@ from .schemas import (
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="tutor-local")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-                   allow_methods=["*"], allow_headers=["*"])
+                allow_methods=["*"], allow_headers=["*"])
+TTS_SPEEDS = (0.3, 0.7, 1.0)
 
 
 @app.exception_handler(TutorError)
@@ -67,26 +68,31 @@ async def health():
 @app.post("/api/turn", response_model=TurnResponse)
 async def turn(session_id: str = Form(...), mode: str = Form("conversation"), level: str = Form("B1"),
                spoken_lang: str = Form("en"), text: str | None = Form(None),
-               speak: bool = Form(True), speak_explanations: bool = Form(False), audio: UploadFile | None = File(None)):
+               speak: bool = Form(True), speak_explanations: bool = Form(False),
+               tts_speed: float = Form(1.0), audio: UploadFile | None = File(None)):
     if mode not in ("conversation", "translate", "scenario") or spoken_lang not in ("en", "it"):
         raise HTTPException(400, "mode o spoken_lang non validi")
+    if tts_speed not in TTS_SPEEDS:
+        raise HTTPException(400, "tts_speed deve essere 0.3, 0.7, 1.0")
     data = await audio.read() if audio else None
     suffix = Path(audio.filename or "turn.webm").suffix or ".webm" if audio else ".webm"
     return await orchestrator.run_turn(session_id=session_id, mode=mode, level=level,
                                        spoken_lang=spoken_lang, text=text, audio=data,
                                        audio_suffix=suffix, speak=speak,
-                                       speak_explanations=speak_explanations)
+                                       speak_explanations=speak_explanations, tts_speed=tts_speed)
 
 
 @app.post("/api/help", response_model=HelpResponse)
 async def contextual_help(session_id: str = Form(...), text: str | None = Form(None),
-                          audio: UploadFile | None = File(None)):
+                          tts_speed: float = Form(1.0), audio: UploadFile | None = File(None)):
     if not (text and text.strip()) and not audio:
         raise HTTPException(400, "serve una domanda in italiano")
+    if tts_speed not in TTS_SPEEDS:
+        raise HTTPException(400, "tts_speed deve essere 0.3, 0.7, 1.0")
     data = await audio.read() if audio else None
     suffix = Path(audio.filename or "help.webm").suffix or ".webm" if audio else ".webm"
     return await orchestrator.contextual_help(session_id=session_id, text=text,
-                                              audio=data, audio_suffix=suffix)
+                                              audio=data, audio_suffix=suffix, tts_speed=tts_speed)
 
 
 @app.get("/api/vocab")
@@ -144,16 +150,17 @@ async def translate(body: TranslateIn):
 class SpeakIn(BaseModel):
     text: str
     lang: str = "en"
+    speed: float = 1.0
 
 
 @app.post("/api/speak")
 async def speak(body: SpeakIn):
     """Pronuncia una singola frase (es. una frase suggerita in uno scenario)."""
-    if body.lang not in ("en", "it") or not body.text.strip():
-        raise HTTPException(400, "testo o lingua non validi")
+    if body.lang not in ("en", "it") or not body.text.strip() or body.speed not in TTS_SPEEDS:
+        raise HTTPException(400, "testo, lingua o velocità non validi")
     if not tts.enabled():
         raise HTTPException(503, "TTS non configurato (TTS_BASE_URL)")
-    res = await tts.speak(body.text, body.lang)
+    res = await tts.speak(body.text, body.lang, speed=body.speed)
     if not res:
         raise HTTPException(502, "il TTS non ha prodotto audio")
     return {"audio_b64": base64.b64encode(res[0]).decode(), "audio_mime": res[1]}

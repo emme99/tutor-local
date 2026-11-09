@@ -113,7 +113,8 @@ run.sh                        avvio in un solo processo
 6. **TTS** (se `speak` e `TTS_BASE_URL`): si pronuncia `reply` + `follow_up` (in conversazione e scenario; in traduzione il
   `follow_up` è una nota in italiano e non si legge). Se `speak_explanations` è attivo, le spiegazioni vengono segmentate:
   testo italiano con `language=it`, contenuto tra virgolette con `language=en`; le clip sono riprodotte in sequenza dopo la risposta. `providers/tts.py` invia `model`,
-  `input`, `voice`, `language` e `response_format` all'endpoint OpenAI-compatible `/audio/speech`. `openai-macos-stt-tts`
+  `input`, `voice`, `language`, `speed` e `response_format` all'endpoint OpenAI-compatible `/audio/speech`. La velocità scelta
+  si applica ai segmenti inglesi; i segmenti italiani usano sempre `1.0`. `openai-macos-stt-tts`
   mappa `voice` alle voci di sistema disponibili e usa `language` (`it`/`en`) per la sintesi con `say`. Un errore del TTS non
   fa fallire il turno (log + risposta senza audio).
 7. **Persistenza** e risposta (`TurnResponse`): il turno, le correzioni e i vocaboli vengono salvati; ogni correzione e ogni
@@ -126,10 +127,10 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 | Metodo | Percorso | Corpo | Risposta |
 |---|---|---|---|
 | GET | `/api/health` | — | `{llm:{base_url,model}, stt_model, tts_enabled}` |
-| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false) | `TurnResponse` |
+| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false), `tts_speed?` (0.8, 0.9, 1.0, 1.1, 1.2; default 1.0) | `TurnResponse` |
 | POST | `/api/translate` | JSON `{text, target:"it"\|"en"}` | `{translation}` (non salva nulla) |
-| POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano) | `HelpResponse` (risposta italiana, `audio_b64` + `audio_segments` per le parti in inglese, timings; non persistita) |
-| POST | `/api/speak` | JSON `{text, lang}` | `{audio_b64, audio_mime}` |
+| POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano), `tts_speed?` (default 1.0) | `HelpResponse` (risposta italiana, `audio_b64` + `audio_segments` per le parti in inglese, timings; non persistita) |
+| POST | `/api/speak` | JSON `{text, lang, speed?}` (speed default 1.0) | `{audio_b64, audio_mime}` |
 | POST | `/api/pronunciation-check` | `multipart/form-data`: `target` (frase inglese attesa), `audio` (registrazione) | `PronunciationCheck` |
 | GET | `/api/vocab` | — | elenco `{term, translation_it, example, first_seen, seen}` |
 | GET | `/api/mistakes` | — | elenco `{ts, session, original, corrected, type, explanation_it}` |
@@ -254,6 +255,8 @@ Il provider TTS di tutor-local è compatibile con il servizio locale `openai-mac
 
 Il servizio usa `say` di macOS, quindi deve restare sull'host Mac e non può essere eseguito in un container Linux. Mantenerlo raggiungibile solo in locale: non espone autenticazione.
 
+La velocità della voce inglese si seleziona dalla barra laterale e accetta solo `0.8`, `0.9`, `1.0`, `1.1` o `1.2`. Il backend invia il valore OpenAI-compatible `speed` per `language=en`; per `language=it` invia sempre `1.0`.
+
 ### Motore fonetico della pronuncia
 
 La valutazione fonetica della ripetizione (roadmap §15.1) userà `facebook/wav2vec2-xlsr-53-espeak-cv-ft`
@@ -318,6 +321,7 @@ alla prima chiamata e le inferenze sono serializzate da un lock; l'audio breve/s
 - **Conversazione continua**: a fine riproduzione del tutor riparte la registrazione; un errore o «Nuova sessione» la interrompe.
 - **Aiuti per l'ascolto**: «Ascolta di nuovo», «Traduci» (`/api/translate`), «Solo ascolto» (testo nascosto finché non si clicca),
   🔊 per ogni frase suggerita nello scenario (`/api/speak`).
+- **Velocità inglese**: selettore nella sidebar sinistra (0,8×, 0,9×, 1,0×, 1,1×, 1,2×); non modifica il parlato italiano.
 - **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il risultato mostra uno score 0–100 con badge colorato (verde ≥ 70, giallo 45–69, rosso < 45), i fonemi stimati e le sequenze IPA attesa/pronunciata.
 - **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica. La risposta è segmentata per lingua: le parti inglesi usano la voce inglese, quelle italiane la voce italiana.
 - **Ripasso**: «🔁 Ripasso» apre un drawer con il badge degli elementi scaduti. Mostra un elemento alla volta (errore o vocabolo),

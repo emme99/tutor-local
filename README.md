@@ -73,6 +73,7 @@ Barra laterale con le opzioni e chat a destra (tema chiaro/scuro automatico; sot
 - **Stop automatico al silenzio** (VAD a energia, nel browser): la registrazione si ferma dopo una pausa regolabile (1,5 / 2,5 / 4 s).
 - **Conversazione continua**: finito il tutor, riparte l'ascolto da solo.
 - **Spiegazioni vocali**: attiva «Leggi le spiegazioni in italiano» nelle opzioni di ascolto per sentirle dopo la risposta del tutor.
+- **Velocità inglese**: scegli nella barra sinistra una velocità da 0,8× a 1,2×; le sintesi italiane restano a velocità normale.
 - **Aiuto contestuale**: apri «Chiedi in italiano» dalla barra superiore per scrivere o pronunciare una domanda. Il tutor risponde in italiano in un pannello laterale separato, usando il dialogo come contesto senza interrompere né modificare la pratica. Le frasi e le parole inglesi nella risposta vengono pronunciate con la voce inglese, le spiegazioni con quella italiana.
 - **Risposta suggerita**: il tutor propone una possibile risposta alla sua ultima domanda, così sai cosa dire per continuare il dialogo. Puoi ascoltarla e provarla; sulle frasi errate puoi anche ascoltare e ripetere la correzione.
 - Audio troppo breve o silenzioso non arriva a Whisper (evita le frasi inventate tipo «Thank you.»).

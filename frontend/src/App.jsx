@@ -24,6 +24,7 @@ export default function App() {
   const [pauseMs, setPauseMs] = useState(2500);
   const [continuous, setContinuous] = useState(false);
   const [readExplanations, setReadExplanations] = useState(false);
+  const [ttsSpeed, setTtsSpeed] = useState(1.0);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpQuestion, setHelpQuestion] = useState("");
   const [helpBusy, setHelpBusy] = useState(false);
@@ -71,7 +72,7 @@ export default function App() {
   const listRef = useRef(null);
   // Le callback asincrone (fine registrazione, fine audio) leggono sempre le impostazioni correnti da qui.
   const cfg = useRef({});
-  cfg.current = { session, mode, level, lang, autoStop, pauseMs, continuous, readExplanations };
+  cfg.current = { session, mode, level, lang, autoStop, pauseMs, continuous, readExplanations, ttsSpeed };
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -126,6 +127,7 @@ export default function App() {
       form.append("level", c.level);
       form.append("spoken_lang", c.lang);
       form.append("speak_explanations", c.readExplanations);
+      form.append("tts_speed", c.ttsSpeed);
       const r = await fetch("/api/turn", { method: "POST", body: form });
       if (!r.ok) {
         let msg = r.statusText;
@@ -200,7 +202,7 @@ export default function App() {
       const r = await fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: phrase, lang: "en" }),
+        body: JSON.stringify({ text: phrase, lang: "en", speed: cfg.current.ttsSpeed }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || r.statusText);
@@ -344,6 +346,7 @@ export default function App() {
     setHelpError("");
     setHelpResult(null);
     form.append("session_id", cfg.current.session);
+    form.append("tts_speed", cfg.current.ttsSpeed);
     try {
       const response = await fetch("/api/help", { method: "POST", body: form });
       const data = await response.json();
@@ -481,7 +484,7 @@ export default function App() {
       const response = await fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, lang: "en" }),
+        body: JSON.stringify({ text, lang: "en", speed: cfg.current.ttsSpeed }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || response.statusText);
@@ -657,6 +660,13 @@ export default function App() {
           <label className="check">
             <input type="checkbox" checked={readExplanations} onChange={(e) => setReadExplanations(e.target.checked)} disabled={mode === "translate"} />
             Leggi le spiegazioni in italiano
+          </label>
+          <label className="field">Velocità voce inglese
+            <select value={ttsSpeed} onChange={(e) => setTtsSpeed(Number(e.target.value))}>
+              {[0.3, 0.7, 1.0].map((speed) => (
+                <option key={speed} value={speed}>{speed.toFixed(1).replace(".", ",")}×</option>
+              ))}
+            </select>
           </label>
         </div>
 

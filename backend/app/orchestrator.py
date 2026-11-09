@@ -226,7 +226,7 @@ async def _help_answer(messages: list[dict]) -> tuple[str, list[tuple[str, str]]
 async def run_turn(*, session_id: str, mode: str, level: str, spoken_lang: str,
                    text: str | None = None, audio: bytes | None = None,
                    audio_suffix: str = ".webm", speak: bool = True,
-                   speak_explanations: bool = False) -> TurnResponse:
+                   speak_explanations: bool = False, tts_speed: float = 1.0) -> TurnResponse:
     timings: dict[str, float] = {}
 
     if text and text.strip():
@@ -272,7 +272,7 @@ async def run_turn(*, session_id: str, mode: str, level: str, spoken_lang: str,
         t0 = time.perf_counter()
         for index, (spoken, language) in enumerate(spoken_parts):
             try:
-                res = await tts.speak(spoken, language)
+                res = await tts.speak(spoken, language, speed=tts_speed)
                 if res:
                     encoded = base64.b64encode(res[0]).decode()
                     if index == 0:
@@ -310,7 +310,7 @@ _HELP_SYSTEM_PROMPT = (
 
 async def contextual_help(*, session_id: str, text: str | None = None,
                           audio: bytes | None = None, audio_suffix: str = ".webm",
-                          speak: bool = True) -> HelpResponse:
+                          speak: bool = True, tts_speed: float = 1.0) -> HelpResponse:
     timings: dict[str, float] = {}
     if text and text.strip():
         question = text.strip()
@@ -340,7 +340,7 @@ async def contextual_help(*, session_id: str, text: str | None = None,
             if not spoken or not re.search(r"\w", spoken):
                 continue
             try:
-                res = await tts.speak(spoken, language)
+                res = await tts.speak(spoken, language, speed=tts_speed)
             except Exception as e:  # noqa: BLE001 - l'aiuto testuale resta disponibile se il TTS fallisce
                 log.warning("TTS aiuto fallito (%s): %s", language, e)
                 continue
