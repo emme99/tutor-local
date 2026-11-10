@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { startVAD } from "./vad.js";
-import PronunciationFeedback from "./PronunciationFeedback.jsx";
+import { useAudioPlayer } from "./hooks/useAudioPlayer.js";
+import { MODE_HINTS, reviewSpeechText } from "./utils.js";
+import Sidebar from "./components/Sidebar.jsx";
+import TopBar from "./components/TopBar.jsx";
+import Composer from "./components/Composer.jsx";
+import TurnExchange from "./components/TurnExchange.jsx";
+import HelpPanel from "./components/HelpPanel.jsx";
+import ReviewPanel from "./components/ReviewPanel.jsx";
 
 let nextId = 1;
-
-function reviewSpeechText(item) {
-  // Per gli errori si ascolta la forma corretta; per i vocaboli il termine inglese, non la traduzione.
-  return item?.kind === "mistake" ? item.answer : item.prompt;
-}
 
 export default function App() {
   const [session, setSession] = useState(() => crypto.randomUUID());
@@ -48,7 +50,6 @@ export default function App() {
 
   const recorder = useRef(null);
   const chunks = useRef([]);
-  const player = useRef(null);
   const stopVad = useRef(null);
   const discardRecording = useRef(false);
   const practiceRecorder = useRef(null);
@@ -67,6 +68,8 @@ export default function App() {
   // Le callback asincrone (fine registrazione, fine audio) leggono sempre le impostazioni correnti da qui.
   const cfg = useRef({});
   cfg.current = { session, mode, level, lang, autoStop, pauseMs, continuous, readExplanations, ttsSpeed };
+
+  const { play, stop: stopAudio } = useAudioPlayer();
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -96,32 +99,6 @@ export default function App() {
     }
   }
 
-  function play(t, onEnd) {
-    const clips = [
-      t.audio_b64 && { audio_b64: t.audio_b64, audio_mime: t.audio_mime },
-      ...(t.explanations_audio_segments || []),
-      ...(t.audio_segments || []),
-    ].filter(Boolean);
-    if (!clips.length) {
-      onEnd?.();
-      return;
-    }
-    player.current?.pause();
-    let index = 0;
-    const playNext = () => {
-      if (index >= clips.length) {
-        onEnd?.();
-        return;
-      }
-      const clip = clips[index++];
-      const a = new Audio(`data:${clip.audio_mime};base64,${clip.audio_b64}`);
-      player.current = a;
-      a.onended = playNext;
-      a.play().catch(playNext);
-    };
-    playNext();
-  }
-
   async function submit(form) {
     const c = cfg.current;
     setBusy(true);
@@ -136,7 +113,11 @@ export default function App() {
       const r = await fetch("/api/turn", { method: "POST", body: form });
       if (!r.ok) {
         let msg = r.statusText;
-        try { msg = (await r.json()).detail || msg; } catch { /* corpo non JSON */ }
+        try {
+          msg = (await r.json()).detail || msg;
+        } catch {
+          /* corpo non JSON */
+        }
         throw new Error(msg);
       }
       const data = await r.json();
@@ -158,8 +139,7 @@ export default function App() {
 
   async function startRecording() {
     if (recorder.current?.state === "recording") return;
-    player.current?.pause(); // niente voce del tutor nel microfono
-    player.current = null;
+    stopAudio(); // niente voce del tutor nel microfono
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -218,7 +198,7 @@ export default function App() {
   }
 
   function openPractice(turnId, target) {
-    player.current?.pause();
+    stopAudio();
     setPractice({ turnId, target, recording: false, loading: false, result: null, error: "" });
     speakPhrase(target);
   }
@@ -226,7 +206,7 @@ export default function App() {
   async function startPracticeRecording() {
     if (!practice || practiceRecorder.current?.state === "recording") return;
     const { turnId, target } = practice;
-    player.current?.pause();
+    stopAudio();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -242,9 +222,11 @@ export default function App() {
         const discarded = discardPracticeRecording.current;
         discardPracticeRecording.current = false;
         if (discarded) return;
-        setPractice((current) => current?.turnId === turnId
-          ? { ...current, recording: false, loading: true, error: "", result: null }
-          : current);
+        setPractice((current) =>
+          current?.turnId === turnId
+            ? { ...current, recording: false, loading: true, error: "", result: null }
+            : current
+        );
         const form = new FormData();
         form.append("target", target);
         form.append("audio", new Blob(practiceChunks.current, { type: mr.mimeType }), "practice.webm");
@@ -252,20 +234,24 @@ export default function App() {
           const response = await fetch("/api/pronunciation-check", { method: "POST", body: form });
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || response.statusText);
-          setPractice((current) => current?.turnId === turnId
-            ? { ...current, loading: false, result: data }
-            : current);
+          setPractice((current) =>
+            current?.turnId === turnId ? { ...current, loading: false, result: data } : current
+          );
         } catch (e) {
-          setPractice((current) => current?.turnId === turnId
-            ? { ...current, loading: false, error: String(e.message || e) }
-            : current);
+          setPractice((current) =>
+            current?.turnId === turnId
+              ? { ...current, loading: false, error: String(e.message || e) }
+              : current
+          );
         }
       };
       mr.start();
       practiceRecorder.current = mr;
-      setPractice((current) => current?.turnId === turnId
-        ? { ...current, recording: true, loading: false, result: null, error: "" }
-        : current);
+      setPractice((current) =>
+        current?.turnId === turnId
+          ? { ...current, recording: true, loading: false, result: null, error: "" }
+          : current
+      );
       if (cfg.current.autoStop) {
         stopPracticeVad.current = startVAD(stream, {
           silenceMs: cfg.current.pauseMs,
@@ -274,9 +260,11 @@ export default function App() {
         });
       }
     } catch (e) {
-      setPractice((current) => current?.turnId === turnId
-        ? { ...current, error: "Microfono non disponibile: " + e.message }
-        : current);
+      setPractice((current) =>
+        current?.turnId === turnId
+          ? { ...current, error: "Microfono non disponibile: " + e.message }
+          : current
+      );
     }
   }
 
@@ -304,8 +292,7 @@ export default function App() {
       stopVad.current = null;
       recorder.current.stop();
     }
-    player.current?.pause();
-    player.current = null;
+    stopAudio();
     if (practiceRecorder.current?.state === "recording") {
       discardPracticeRecording.current = true;
       stopPracticeVad.current?.();
@@ -376,7 +363,7 @@ export default function App() {
 
   async function startHelpRecording() {
     if (helpRecorder.current?.state === "recording" || helpBusy) return;
-    player.current?.pause();
+    stopAudio();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -481,15 +468,15 @@ export default function App() {
   }
 
   async function speakReview(item) {
-    const text = reviewSpeechText(item);
-    if (!text || reviewAudioBusy) return;
+    const phrase = reviewSpeechText(item);
+    if (!phrase || reviewAudioBusy) return;
     setReviewAudioBusy(true);
     setReviewError("");
     try {
       const response = await fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, lang: "en", speed: cfg.current.ttsSpeed }),
+        body: JSON.stringify({ text: phrase, lang: "en", speed: cfg.current.ttsSpeed }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || response.statusText);
@@ -509,8 +496,7 @@ export default function App() {
       setReviewError("Questo elemento non ha una frase inglese da pronunciare.");
       return;
     }
-    player.current?.pause();
-    player.current = null;
+    stopAudio();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -526,9 +512,11 @@ export default function App() {
         const discarded = discardReviewRecording.current;
         discardReviewRecording.current = false;
         if (discarded) return;
-        setReviewPractice((current) => current?.itemId === item.id
-          ? { ...current, recording: false, loading: true, error: "", result: null }
-          : current);
+        setReviewPractice((current) =>
+          current?.itemId === item.id
+            ? { ...current, recording: false, loading: true, error: "", result: null }
+            : current
+        );
         const form = new FormData();
         form.append("target", target);
         form.append("audio", new Blob(reviewChunks.current, { type: mr.mimeType }), "review.webm");
@@ -536,18 +524,27 @@ export default function App() {
           const response = await fetch("/api/pronunciation-check", { method: "POST", body: form });
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || response.statusText);
-          setReviewPractice((current) => current?.itemId === item.id
-            ? { ...current, loading: false, result: data }
-            : current);
+          setReviewPractice((current) =>
+            current?.itemId === item.id ? { ...current, loading: false, result: data } : current
+          );
         } catch (e) {
-          setReviewPractice((current) => current?.itemId === item.id
-            ? { ...current, loading: false, error: String(e.message || e) }
-            : current);
+          setReviewPractice((current) =>
+            current?.itemId === item.id
+              ? { ...current, loading: false, error: String(e.message || e) }
+              : current
+          );
         }
       };
       mr.start();
       reviewRecorder.current = mr;
-      setReviewPractice({ itemId: item.id, target, recording: true, loading: false, result: null, error: "" });
+      setReviewPractice({
+        itemId: item.id,
+        target,
+        recording: true,
+        loading: false,
+        result: null,
+        error: "",
+      });
       if (cfg.current.autoStop) {
         stopReviewVad.current = startVAD(stream, {
           silenceMs: cfg.current.pauseMs,
@@ -557,7 +554,11 @@ export default function App() {
       }
     } catch (e) {
       setReviewPractice({
-        itemId: item.id, target, recording: false, loading: false, result: null,
+        itemId: item.id,
+        target,
+        recording: false,
+        loading: false,
+        result: null,
         error: "Microfono non disponibile: " + e.message,
       });
     }
@@ -583,10 +584,16 @@ export default function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || response.statusText);
-      setReview((current) => current
-        ? { ...current, items: current.items.filter((entry) => entry.id !== item.id),
-            due_count: data.due_count, total: data.total }
-        : current);
+      setReview((current) =>
+        current
+          ? {
+              ...current,
+              items: current.items.filter((entry) => entry.id !== item.id),
+              due_count: data.due_count,
+              total: data.total,
+            }
+          : current
+      );
       setReviewStats({ due_count: data.due_count, total: data.total });
       setReviewRevealed(false);
     } catch (e) {
@@ -596,217 +603,74 @@ export default function App() {
     }
   }
 
-  const modeLabel = { conversation: "Conversazione", scenario: "Scenario", translate: "Traduzione" }[mode];
-  const hints = {
-    conversation: "Premi ● Parla e dì qualcosa in inglese, per esempio «My name is…». Il tutor ti risponde e ti corregge.",
-    scenario: "Descrivi in italiano una situazione, per esempio «Aiutami a presentarmi in albergo per avere una camera»: riceverai le frasi da dire e poi farete un gioco di ruolo.",
-    translate: "Parla (o scrivi) nella lingua scelta a sinistra: il tutor traduce e pronuncia la traduzione.",
-  };
   const currentReview = review?.items?.[0];
   const reviewAttempt = reviewPractice?.itemId === currentReview?.id ? reviewPractice : null;
-  const reviewListenLabel = currentReview?.kind === "mistake" ? "🔊 Ascolta frase corretta" : "🔊 Ascolta termine";
+  const reviewListenLabel =
+    currentReview?.kind === "mistake" ? "🔊 Ascolta frase corretta" : "🔊 Ascolta termine";
 
   return (
     <div className="app">
-      <aside className={sideOpen ? "side open" : "side"}>
-        <div className="brand">
-          <h1>Tutor locale</h1>
-          <p className="muted small">Tutto in locale: Whisper, LLM e TTS sul tuo Mac.</p>
-        </div>
-
-        <div className="group">
-          <h2>Modalità</h2>
-          <select value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="conversation">Conversazione (inglese)</option>
-            <option value="scenario">Scenario (frasi + gioco di ruolo)</option>
-            <option value="translate">Traduzione</option>
-          </select>
-          {mode !== "translate" ? (
-            <label className="field">Livello
-              <select value={level} onChange={(e) => setLevel(e.target.value)}>
-                {["A2", "B1", "B2", "C1"].map((l) => <option key={l}>{l}</option>)}
-              </select>
-            </label>
-          ) : (
-            <label className="field">Parlo in
-              <select value={lang} onChange={(e) => setLang(e.target.value)}>
-                <option value="it">Italiano → inglese</option>
-                <option value="en">Inglese → italiano</option>
-              </select>
-            </label>
-          )}
-        </div>
-
-        <div className="group">
-          <h2>Microfono</h2>
-          <label className="check">
-            <input type="checkbox" checked={autoStop} onChange={(e) => setAutoStop(e.target.checked)} />
-            Stop automatico al silenzio
-          </label>
-          <label className="field">Pausa che mi ferma
-            <select value={pauseMs} onChange={(e) => setPauseMs(Number(e.target.value))} disabled={!autoStop}>
-              <option value={1500}>1,5 s</option>
-              <option value={2500}>2,5 s</option>
-              <option value={4000}>4 s (parlo lentamente)</option>
-            </select>
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={continuous} onChange={(e) => setContinuous(e.target.checked)} disabled={!autoStop} />
-            Conversazione continua
-          </label>
-        </div>
-
-        <div className="group">
-          <h2>Ascolto</h2>
-          <label className="check">
-            <input type="checkbox" checked={hideText} onChange={(e) => setHideText(e.target.checked)} />
-            Solo ascolto (nascondi il testo del tutor)
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={readExplanations} onChange={(e) => setReadExplanations(e.target.checked)} disabled={mode === "translate"} />
-            Leggi le spiegazioni in italiano
-          </label>
-          <label className="field">Velocità voce inglese
-            <select value={ttsSpeed} onChange={(e) => setTtsSpeed(Number(e.target.value))}>
-              {[0.3, 0.7, 1.0].map((speed) => (
-                <option key={speed} value={speed}>{speed.toFixed(1).replace(".", ",")}×</option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <button type="button" className="ghost" onClick={() => { newSession(); setSideOpen(false); }}>
-          ↺ Nuova sessione
-        </button>
-        <p className="muted small build">build {typeof __BUILD_TIME__ !== "undefined" ? __BUILD_TIME__ : "dev"}</p>
-      </aside>
+      <Sidebar
+        open={sideOpen}
+        mode={mode}
+        setMode={setMode}
+        level={level}
+        setLevel={setLevel}
+        lang={lang}
+        setLang={setLang}
+        autoStop={autoStop}
+        setAutoStop={setAutoStop}
+        pauseMs={pauseMs}
+        setPauseMs={setPauseMs}
+        continuous={continuous}
+        setContinuous={setContinuous}
+        hideText={hideText}
+        setHideText={setHideText}
+        readExplanations={readExplanations}
+        setReadExplanations={setReadExplanations}
+        ttsSpeed={ttsSpeed}
+        setTtsSpeed={setTtsSpeed}
+        onNewSession={newSession}
+      />
 
       {sideOpen && <div className="scrim" onClick={() => setSideOpen(false)} />}
 
       <main className="chat">
-        <header className="topbar">
-          <button type="button" className="menu ghost" onClick={() => setSideOpen(true)} aria-label="Opzioni">☰</button>
-          <strong>{modeLabel}</strong>
-          <span className="muted small">
-            {mode === "translate" ? (lang === "it" ? "italiano → inglese" : "inglese → italiano") : `livello ${level}`}
-          </span>
-          <button type="button" className="ghost help-trigger" onClick={openHelp} aria-expanded={helpOpen} aria-controls="contextual-help">
-            Chiedi in italiano
-          </button>
-          <button type="button" className="ghost" onClick={openReview} aria-expanded={reviewOpen} aria-controls="review-panel">
-            🔁 Ripasso{reviewStats.due_count > 0 ? ` (${reviewStats.due_count})` : ""}
-          </button>
-        </header>
+        <TopBar
+          mode={mode}
+          level={level}
+          lang={lang}
+          helpOpen={helpOpen}
+          reviewOpen={reviewOpen}
+          reviewDueCount={reviewStats.due_count}
+          onOpenMenu={() => setSideOpen(true)}
+          onOpenHelp={openHelp}
+          onOpenReview={openReview}
+        />
 
         <div className="messages" ref={listRef}>
-          {turns.length === 0 && <p className="empty">{hints[mode]}</p>}
+          {turns.length === 0 && <p className="empty">{MODE_HINTS[mode]}</p>}
 
-          {turns.map((t) => {
-            const hidden = hideText && !revealed[t.id];
-            const reveal = () => hideText && setRevealed((r) => ({ ...r, [t.id]: true }));
-            const showFix = t.mode !== "translate" && t.tutor.corrections.length > 0;
-            return (
-              <div key={t.id} className="exchange">
-                <div className="row user">
-                  <div className="bubble user">{t.transcript}</div>
-                </div>
-
-                <div className="row tutor">
-                  <div className="stack">
-                    {showFix && (
-                      <div className="note">
-                        {t.tutor.corrected_sentence && (
-                          <div className="fix-line">
-                            <div className="fix">✎ {t.tutor.corrected_sentence}</div>
-                            <button type="button" className="ghost" onClick={() => openPractice(t.id, t.tutor.corrected_sentence)} disabled={busy || recording || practice?.recording}>
-                              🔊 Ascolta frase corretta
-                            </button>
-                          </div>
-                        )}
-                        {t.tutor.corrections.map((c, j) => (
-                          <div key={j} className="corr">
-                            <b>{c.original}</b> → <b>{c.corrected}</b>
-                            <span> {c.explanation_it}</span>
-                          </div>
-                        ))}
-
-                      </div>
-                    )}
-
-                    <div className={hidden ? "bubble tutor hidden" : "bubble tutor"} onClick={reveal}>
-                      {hidden ? "••• ascolta, poi clicca per leggere" : (
-                        <>
-                          <div>{t.tutor.reply}</div>
-                          {t.tutor.follow_up && <div className="follow">{t.tutor.follow_up}</div>}
-                        </>
-                      )}
-                    </div>
-
-                    {t.mode !== "translate" && t.tutor.suggested_reply && (
-                      <div className="suggested-reply">
-                        <div><b>Puoi rispondere:</b> {t.tutor.suggested_reply}</div>
-                        <button type="button" className="ghost" onClick={() => openPractice(t.id, t.tutor.suggested_reply)} disabled={busy || recording || practice?.recording}>
-                          🔊 Ascolta e prova a rispondere
-                        </button>
-                      </div>
-                    )}
-
-                    {practice?.turnId === t.id && (
-                      <div className="practice">
-                        <div className="practice-target"><b>Obiettivo:</b> {practice.target}</div>
-                        <div className="actions">
-                          <button type="button" className="ghost" onClick={() => speakPhrase(practice.target)} disabled={practice.recording || practice.loading}>
-                            🔊 Ascolta modello
-                          </button>
-                          <button type="button" className={practice.recording ? "rec on" : "rec"} onClick={togglePracticeRecording} disabled={busy || recording || practice.loading}>
-                            {practice.recording ? "■ Termina tentativo" : "● Registra ripetizione"}
-                          </button>
-                        </div>
-                        {practice.recording && <p className="muted small">Ti ascolto… {autoStop ? `stop dopo ${pauseMs / 1000} s di silenzio.` : "premi Termina tentativo quando hai finito."}</p>}
-                        {practice.loading && <p className="muted small">Confronto la frase…</p>}
-                        {practice.error && <p className="practice-error">{practice.error}</p>}
-                        {practice.result && (
-                          <PronunciationFeedback result={practice.result} onRetry={togglePracticeRecording} />
-                        )}
-                      </div>
-                    )}
-
-                    {translations[t.id] && <div className="translation">🇮🇹 {translations[t.id]}</div>}
-
-                    {t.mode === "scenario" && t.tutor.new_vocab.length > 0 && (
-                      <div className="phrases">
-                        {t.tutor.new_vocab.map((v) => (
-                          <div key={v.term} className="phrase">
-                            <button type="button" className="icon" onClick={() => speakPhrase(v.term)} title="Ascolta">🔊</button>
-                            <div>
-                              <b>{v.term}</b>
-                              <div className="muted">{v.translation_it}</div>
-                              {v.example && <div className="muted small">{v.example}</div>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {t.mode !== "scenario" && t.tutor.new_vocab.length > 0 && (
-                      <div className="vocab">
-                        {t.tutor.new_vocab.map((v) => (
-                          <span key={v.term} title={v.example}>{v.term} = {v.translation_it}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="actions">
-                      {(t.audio_b64 || t.explanations_audio_segments?.length > 0) && <button type="button" className="ghost" onClick={() => play(t)}>🔊 Ascolta di nuovo</button>}
-                      <button type="button" className="ghost" onClick={() => translate(t)}>🇮🇹 Traduci</button>
-                      <span className="timings">
-                        {Object.entries(t.timings).map(([k, v]) => `${k} ${v}${k.includes("tok") ? "" : " s"}`).join(" · ")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {turns.map((t) => (
+            <TurnExchange
+              key={t.id}
+              turn={t}
+              hideText={hideText}
+              revealed={!!revealed[t.id]}
+              onReveal={() => hideText && setRevealed((r) => ({ ...r, [t.id]: true }))}
+              translations={translations}
+              practice={practice}
+              busy={busy}
+              recording={recording}
+              autoStop={autoStop}
+              pauseMs={pauseMs}
+              onOpenPractice={openPractice}
+              onSpeakPhrase={speakPhrase}
+              onTogglePracticeRecording={togglePracticeRecording}
+              onPlay={play}
+              onTranslate={translate}
+            />
+          ))}
 
           {busy && (
             <div className="row tutor">
@@ -815,164 +679,56 @@ export default function App() {
           )}
         </div>
 
-        {error && <div className="error-bar">{error}</div>}
-
-        <div className="composer">
-          <button type="button" className={recording ? "rec on" : "rec"} onClick={toggleRecording} disabled={busy}>
-            {recording ? "■ Stop e invia" : "● Parla"}
-          </button>
-          {recording && autoStop && (
-            <div className="meter" title="Livello del microfono">
-              <div style={{ width: `${Math.round(micLevel * 100)}%` }} />
-            </div>
-          )}
-          <form onSubmit={sendText}>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={mode === "scenario" ? "Es.: Aiutami a presentarmi in albergo per avere una camera" : "…oppure scrivi qui"}
-              disabled={busy}
-            />
-            <button type="submit" className="send" disabled={busy || !text.trim()}>Invia</button>
-          </form>
-        </div>
-        {recording && autoStop && (
-          <div className="status">Ti ascolto… mi fermo dopo {pauseMs / 1000} s di silenzio.</div>
-        )}
+        <Composer
+          text={text}
+          setText={setText}
+          recording={recording}
+          busy={busy}
+          micLevel={micLevel}
+          autoStop={autoStop}
+          pauseMs={pauseMs}
+          error={error}
+          mode={mode}
+          onToggleRecording={toggleRecording}
+          onSendText={sendText}
+        />
       </main>
 
       {helpOpen && (
-        <div className="help-scrim" onMouseDown={(event) => event.target === event.currentTarget && closeHelp()}>
-          <aside className="help-panel" id="contextual-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
-            <header className="help-header">
-              <div>
-                <h2 id="help-title">Chiedi in italiano</h2>
-                <p className="muted small">L'aiuto resta qui e non interrompe la conversazione inglese.</p>
-              </div>
-              <button type="button" className="ghost" onClick={closeHelp} aria-label="Chiudi aiuto">×</button>
-            </header>
-
-            <div className="help-thread" aria-live="polite">
-              {!helpResult && !helpBusy && <p className="muted">Puoi chiedere una spiegazione grammaticale o come dire una frase.</p>}
-              {helpResult && (
-                <>
-                  <div className="help-question">{helpResult.question}</div>
-                  <div className="help-answer">{helpResult.answer}</div>
-                  {(helpResult.audio_b64 || helpResult.audio_segments?.length > 0) && <button type="button" className="ghost" onClick={() => play(helpResult)}>🔊 Ascolta risposta</button>}
-                  <span className="timings">{Object.entries(helpResult.timings).map(([key, value]) => `${key} ${value} s`).join(" · ")}</span>
-                </>
-              )}
-              {helpBusy && <p className="muted">Preparo la spiegazione…</p>}
-            </div>
-
-            {helpError && <div className="error-bar">{helpError}</div>}
-            {helpRecording && <div className="status">Ti ascolto… {autoStop ? `stop dopo ${pauseMs / 1000} s di silenzio.` : "premi Stop per inviare."}</div>}
-            <form className="help-composer" onSubmit={sendHelpText}>
-              <button type="button" className={helpRecording ? "rec on" : "rec"} onClick={toggleHelpRecording} disabled={helpBusy} aria-label={helpRecording ? "Termina domanda vocale" : "Fai una domanda a voce"}>
-                {helpRecording ? "■ Stop" : "● Voce"}
-              </button>
-              <input value={helpQuestion} onChange={(event) => setHelpQuestion(event.target.value)} placeholder="Es.: Come si coniuga essere?" disabled={helpBusy || helpRecording} />
-              <button type="submit" className="send" disabled={helpBusy || helpRecording || !helpQuestion.trim()}>Chiedi</button>
-            </form>
-          </aside>
-        </div>
+        <HelpPanel
+          helpQuestion={helpQuestion}
+          setHelpQuestion={setHelpQuestion}
+          helpBusy={helpBusy}
+          helpRecording={helpRecording}
+          helpError={helpError}
+          helpResult={helpResult}
+          autoStop={autoStop}
+          pauseMs={pauseMs}
+          onClose={closeHelp}
+          onSendText={sendHelpText}
+          onToggleRecording={toggleHelpRecording}
+          onPlay={play}
+        />
       )}
 
       {reviewOpen && (
-        <div className="help-scrim" onMouseDown={(event) => event.target === event.currentTarget && closeReview()}>
-          <aside className="help-panel" id="review-panel" role="dialog" aria-modal="true" aria-labelledby="review-title">
-            <header className="help-header">
-              <div>
-                <h2 id="review-title">Ripasso</h2>
-                <p className="muted small">Errori e vocaboli tornano al momento giusto, senza interrompere la conversazione.</p>
-              </div>
-              <button type="button" className="ghost" onClick={closeReview} aria-label="Chiudi ripasso">×</button>
-            </header>
-
-            {reviewBusy && !review && <p className="muted">Carico il ripasso…</p>}
-            {reviewError && <div className="error-bar">{reviewError}</div>}
-
-            {review && !currentReview && (
-              <p className="muted">Nessun elemento in scadenza. Torna dopo qualche conversazione.</p>
-            )}
-
-            {currentReview && (
-              <div className="review-card">
-                <div className="muted small">
-                  {currentReview.kind === "mistake" ? "Errore da correggere" : "Vocabolario da ricordare"}
-                </div>
-                <div className="review-prompt">{currentReview.prompt}</div>
-                {!reviewRevealed ? (
-                  <button type="button" className="send" onClick={() => setReviewRevealed(true)} disabled={reviewBusy}>
-                    Mostra risposta
-                  </button>
-                ) : (
-                  <>
-                    <div className="review-answer">{currentReview.answer}</div>
-                    {currentReview.hint && <p className="muted">{currentReview.hint}</p>}
-                    <div className="actions review-actions">
-                      <button type="button" className="ghost" onClick={() => speakReview(currentReview)}
-                        disabled={reviewAudioBusy || reviewAttempt?.recording}>
-                        {reviewAudioBusy ? "Preparo audio…" : reviewListenLabel}
-                      </button>
-                      <button type="button" className={reviewAttempt?.recording ? "rec on" : "rec"}
-                        onClick={toggleReviewRecording} disabled={reviewAttempt?.loading || reviewAudioBusy}>
-                        {reviewAttempt?.recording ? "■ Termina" : "● Ripeti"}
-                      </button>
-                    </div>
-                    {reviewAttempt?.recording && (
-                      <p className="muted small">
-                        Ti ascolto… {autoStop ? `stop dopo ${pauseMs / 1000} s di silenzio.` : "premi Termina quando hai finito."}
-                      </p>
-                    )}
-                    {reviewAttempt?.loading && <p className="muted small">Confronto la pronuncia…</p>}
-                    {reviewAttempt?.error && <p className="practice-error">{reviewAttempt.error}</p>}
-                    {reviewAttempt?.result && (
-                      <PronunciationFeedback result={reviewAttempt.result} onRetry={toggleReviewRecording} />
-                    )}
-                    <div className="grades">
-                      {[["Non ricordavo", 0], ["Difficile", 1], ["Bene", 2], ["Facile", 3]].map(([label, value]) => (
-                        <button key={value} type="button" className="ghost" onClick={() => gradeReview(value)} disabled={reviewBusy}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-                <p className="muted small">In coda: {review.items.length} · totale {review.total}</p>
-              </div>
-            )}
-
-            {summary && summary.turns > 0 && (
-              <section className="review-summary">
-                <h3>Riepilogo sessione</h3>
-                <p className="muted small">
-                  {summary.turns} turni · {summary.corrections.length} correzioni · {summary.vocab.length} vocaboli
-                </p>
-                {summary.corrections.length > 0 && (
-                  <div>
-                    <b>Da rivedere</b>
-                    <ul>
-                      {summary.corrections.slice(0, 6).map((correction, index) => (
-                        <li key={index}>{correction.original} → {correction.corrected}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {summary.vocab.length > 0 && (
-                  <div>
-                    <b>Vocaboli</b>
-                    <ul>
-                      {summary.vocab.slice(0, 8).map((item, index) => (
-                        <li key={index}>{item.term} = {item.translation_it}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-            )}
-          </aside>
-        </div>
+        <ReviewPanel
+          review={review}
+          reviewBusy={reviewBusy}
+          reviewError={reviewError}
+          reviewRevealed={reviewRevealed}
+          setReviewRevealed={setReviewRevealed}
+          summary={summary}
+          autoStop={autoStop}
+          pauseMs={pauseMs}
+          reviewAudioBusy={reviewAudioBusy}
+          reviewAttempt={reviewAttempt}
+          reviewListenLabel={reviewListenLabel}
+          onClose={closeReview}
+          onSpeakReview={speakReview}
+          onToggleReviewRecording={toggleReviewRecording}
+          onGrade={gradeReview}
+        />
       )}
     </div>
   );

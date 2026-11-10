@@ -41,7 +41,7 @@ sequenceDiagram
 
 | Componente | Tecnologia | Dove gira | Note |
 |---|---|---|---|
-| Interfaccia | React 18 + Vite | Browser | Un solo componente (`App.jsx`) + `vad.js` |
+| Interfaccia | React 18 + Vite | Browser | `App.jsx` (stato) + `components/` + `hooks/` + `vad.js` |
 | Orchestrator | FastAPI + uvicorn (Python ≥ 3.11) | Processo locale, porta 8010 | Serve anche il frontend compilato |
 | STT | `mlx-whisper`, `whisper-large-v3-turbo` | In-process nel backend (GPU Apple) | Alternativa: endpoint OpenAI-compatible |
 | Pronuncia | Wav2Vec2 XLSR-53 (CTC) + `phonemizer`/espeak-ng | In-process nel backend (PyTorch MPS) | Solo ripetizione: score 0–100, IPA atteso/predetto (§8) |
@@ -78,8 +78,12 @@ backend/
     providers/tts.py          client /audio/speech
   tests/                      suite pytest (parser, memoria, prompt, orchestrator, API)
 frontend/
-  src/App.jsx                 interfaccia, registrazione, riproduzione, modalità, ripasso
+  src/App.jsx                 stato, orchestrazione API/registrazioni, layout
+  src/utils.js                helper e costanti (hint modalità, reviewSpeechText)
+  src/hooks/useAudioPlayer.js riproduzione sequenziale clip base64
+  src/components/             Sidebar, TopBar, Composer, TurnExchange, HelpPanel, ReviewPanel, PronunciationFeedback
   src/vad.js                  VAD a energia (stop automatico al silenzio)
+  src/styles.css              tema chiaro/scuro + feedback fonetico (--pf-*)
 llm_bench/                    benchmark LLM per il compito del tutor (§11)
 phonetic_bench/               verifica ambiente e benchmark della valutazione fonetica (§8, §11)
 deploy/                       Dockerfile e compose (bozze non testate, §13)
@@ -128,7 +132,7 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 | Metodo | Percorso | Corpo | Risposta |
 |---|---|---|---|
 | GET | `/api/health` | — | `{llm:{base_url,model}, stt_model, tts_enabled}` |
-| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false), `tts_speed?` (0.8, 0.9, 1.0, 1.1, 1.2; default 1.0) | `TurnResponse` |
+| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false), `tts_speed?` (0.3, 0.7, 1.0 default 1.0) | `TurnResponse` |
 | POST | `/api/translate` | JSON `{text, target:"it"\|"en"}` | `{translation}` (non salva nulla) |
 | POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano), `tts_speed?` (default 1.0) | `HelpResponse` (risposta italiana, `audio_b64` + `audio_segments` per le parti in inglese, timings; non persistita) |
 | POST | `/api/speak` | JSON `{text, lang, speed?}` (speed default 1.0) | `{audio_b64, audio_mime}` |
@@ -314,6 +318,34 @@ alla prima chiamata e le inferenze sono serializzate da un lock; l'audio breve/s
 
 ## 9. Frontend
 
+### 9.1 Struttura dei sorgenti
+
+```
+src/
+  App.jsx                 # stato, chiamate API, registrazioni (orchestrator UI)
+  main.jsx                # entry Vite
+  utils.js                # MODE_HINTS, MODE_LABEL, reviewSpeechText
+  vad.js                  # VAD a energia
+  styles.css              # layout + tema + variabili --pf-* (feedback fonetico)
+  hooks/
+    useAudioPlayer.js     # play/stop di clip base64 in sequenza
+  components/
+    Sidebar.jsx           # modalità, livello, microfono, ascolto, nuova sessione
+    TopBar.jsx            # titolo modalità, help, ripasso
+    Composer.jsx          # ● Parla + campo testo + errori
+    TurnExchange.jsx      # un turno (bolle, correzioni, practice, vocab)
+    HelpPanel.jsx         # drawer «Chiedi in italiano»
+    ReviewPanel.jsx       # drawer ripasso + riepilogo sessione
+    PronunciationFeedback.jsx  # score/verdetto/chip/tips IPA
+```
+
+`App.jsx` resta il contenitore dello stato e della logica audio/API (quattro flussi di
+registrazione: turno, practice, help, review). I componenti in `components/` sono
+prevalentemente presentazionali: ricevono props e callback, senza fetch diretti.
+Aggiungere una nuova area UI = nuovo file in `components/` + montaggio in `App.jsx`.
+Il feedback fonetico usa variabili CSS `--pf-*` definite in `:root` e sovrascritte
+nel tema scuro, così tip e chip restano leggibili in light e dark.
+
 - **Layout**: barra laterale a sinistra con le opzioni (modalità, livello o lingua, microfono, solo ascolto, nuova sessione) e a destra la chat
   (conversazione dall'alto verso il basso con scorrimento automatico, compositore con «● Parla» e campo di testo in basso). Sotto gli 820 px la
   barra diventa un pannello a scomparsa (☰). I drawer di ripasso e aiuto sopra i 1000 px sono **affiancati** nel layout (`flex: 1` per la chat, drawer a larghezza fissa) impedendo che i messaggi o il compositore vengano coperti; sotto i 1000 px aprono come overlay con scrim oscurato e chiusura rapida con tasto `Esc` o clic esterno. Chiaro/scuro automatico (`prefers-color-scheme`). Solo CSS puro, nessuna libreria di UI.
@@ -484,7 +516,7 @@ usare «Installa come app/aggiungi al Dock» (comportamento da verificare), più
 ## 16. Come estendere
 
 - **Nuova modalità**: aggiungi il prompt in `modes.py` (`system_prompt`, eventualmente `reply_language`); consenti il nome in
-  `main.py` (validazione `mode`) e in `orchestrator.py` (storia/`max_tokens`); aggiungi l'opzione in `App.jsx`; scrivi casi nel
+  `main.py` (validazione `mode`) e in `orchestrator.py` (storia/`max_tokens`); aggiungi l'opzione in `components/Sidebar.jsx` e la validazione in `App.jsx`; scrivi casi nel
   benchmark; rilancia `llm_bench`.
 - **Nuovo provider** (STT/LLM/TTS): implementa la stessa interfaccia in `providers/` (`transcribe`, `chat`/`tutor_reply`,
   `speak`) e selezionalo da `config.py`.

@@ -1,17 +1,22 @@
 # tutor-local: tutor vocale italiano/inglese, tutto in locale
 
-Whisper (STT) → LLM (tutor) → TTS, orchestrati da un backend FastAPI, con un frontend React minimale.
+Whisper (STT) → LLM (tutor) → TTS, orchestrati da un backend FastAPI, con un frontend React.
 Il progetto parte volutamente piccolo: un turno = una richiesta HTTP, poi si ottimizza.
 
 > **⚠️ Disclaimer**: tutor-local è un progetto **sperimentale**, realizzato con l'ausilio di strumenti di intelligenza artificiale. L'autore non si assume alcuna responsabilità per l'utilizzo di questo codice.
 
 > **Sei uno studente?** Leggi [GUIDA-STUDENTE.md](GUIDA-STUDENTE.md): funzionalità, esempi d'uso e routine di studio.
 
+> **English?** See [README-EN.md](README-EN.md).
+
 ```
-backend/    FastAPI: orchestrator, provider STT/LLM/TTS, memoria SQLite, suite pytest
-frontend/   React (Vite): registra, mostra correzioni e risposta, riproduce l'audio, ripasso
-llm_bench/  benchmark per scegliere il modello LLM sul compito reale del tutor
+backend/     FastAPI: orchestrator, provider STT/LLM/TTS, memoria SQLite, suite pytest
+frontend/    React (Vite): App.jsx (stato) + components/ + hooks/ + vad.js
+llm_bench/   benchmark per scegliere il modello LLM sul compito reale del tutor
+docs/        TECHNICAL.md (architettura, contratti, decisioni)
 ```
+
+Il frontend è organizzato così: `App.jsx` tiene stato e chiamate API; i pezzi di UI vivono in `frontend/src/components/` (Sidebar, TopBar, Composer, TurnExchange, HelpPanel, ReviewPanel, PronunciationFeedback). Dettagli in [`docs/TECHNICAL.md`](docs/TECHNICAL.md) §9.
 
 ## 1. Scegli il modello (llm_bench)
 
@@ -22,6 +27,7 @@ ollama pull gemma4:26b            # verifica i tag con `ollama list`; vedi llm_b
 cd ../llm_bench
 python run_llm_bench.py --models gemma4_26b_a4b      # poi gli altri, uno alla volta
 ```
+
 **Thinking spento**: il runner invia `reasoning_effort: "none"` (vale per Ollama `/v1` e per Splash). Se lo lasci acceso il ragionamento
 consuma `max_tokens` e le risposte arrivano troncate o vuote: nel report lo vedi dalle colonne «Troncati» e «Con thinking».
 Con 36 GB tieni in memoria **un solo** modello alla volta (ferma Ollama con `ollama stop <modello>` prima di avviare `splash serve`).
@@ -41,7 +47,8 @@ latenza e tok/s. Leggi anche gli esempi completi: la qualità dell'italiano non 
 ```bash
 ./run.sh      # compila il frontend la prima volta e serve tutto su http://127.0.0.1:8010
 ```
-Per lo sviluppo con ricarica automatica usa invece i due comandi qui sotto. **Documentazione tecnica completa: `docs/TECHNICAL.md`.**
+
+Per lo sviluppo con ricarica automatica usa invece i due comandi qui sotto. **Documentazione tecnica completa: [`docs/TECHNICAL.md`](docs/TECHNICAL.md).**
 
 ### Sviluppo
 
@@ -51,6 +58,7 @@ cd backend && uvicorn app.main:app --port 8010 --reload
 # in un altro terminale:
 cd frontend && npm install && npm run dev      # http://localhost:5173
 ```
+
 Alla prima richiesta vocale Whisper scarica il modello. Il TTS usa il servizio locale `openai-macos-stt-tts`, basato sulle voci di sistema di macOS tramite `say`, avviato separatamente sulla porta 5050. Nel `.env` del servizio abilita HTTP (`USE_HTTP=True`); in tutor-local imposta le voci macOS configurate nel servizio:
 
 ```dotenv

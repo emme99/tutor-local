@@ -15,9 +15,9 @@ import { useState } from "react";
 // ---------------------------------------------------------------------------
 
 function scoreTone(score) {
-  if (score >= 70) return "green";
-  if (score >= 45) return "yellow";
-  return "red";
+  if (score >= 70) return "score-good";
+  if (score >= 45) return "score-mid";
+  return "score-low";
 }
 
 function verdictLabel(verdict) {

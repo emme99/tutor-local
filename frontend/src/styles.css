@@ -3,6 +3,15 @@
   --bg: #f4f6f9; --panel: #ffffff; --text: #1b1f27; --muted: #6a7482; --border: #e1e5eb;
   --accent: #2f6fed; --user: #2f6fed; --tutor: #ffffff;
   --note: #fff6e3; --note-border: #f1d79b; --ok: #1d9a68; --danger: #d33a3a; --chip: #eef2f9;
+  /* feedback fonetico (tema chiaro) */
+  --pf-ok-bg: #d1fae5; --pf-ok-fg: #065f46; --pf-ok-border: #a7f3d0;
+  --pf-warn-bg: #fef3c7; --pf-warn-fg: #92400e; --pf-warn-border: #fcd34d;
+  --pf-err-bg: #fee2e2; --pf-err-fg: #991b1b; --pf-err-border: #fca5a5;
+  --pf-info-bg: #eff6ff; --pf-info-fg: #1e3a5f; --pf-info-border: #60a5fa;
+  --pf-ins-bg: #e0f2fe; --pf-ins-fg: #0369a1;
+  --pf-tip-high-bg: #fff5f5; --pf-tip-high-border: #ef4444; --pf-tip-high-fg: #7f1d1d;
+  --pf-tip-med-bg: #fffbeb; --pf-tip-med-border: #f59e0b; --pf-tip-med-fg: #78350f;
+  --pf-tip-low-bg: #eff6ff; --pf-tip-low-border: #60a5fa; --pf-tip-low-fg: #1e3a5f;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -10,6 +19,15 @@
     --bg: #13151a; --panel: #1a1d23; --text: #e8ebf0; --muted: #98a2b0; --border: #2a2f38;
     --accent: #6a96ff; --user: #2d5ccb; --tutor: #232730;
     --note: #2a2517; --note-border: #5a4a22; --ok: #3cc78e; --danger: #ff6b6b; --chip: #232833;
+    /* feedback fonetico (tema scuro): sfondi scuri + testo chiaro leggibile */
+    --pf-ok-bg: #143528; --pf-ok-fg: #6ee7b7; --pf-ok-border: #065f46;
+    --pf-warn-bg: #3a2e12; --pf-warn-fg: #fcd34d; --pf-warn-border: #92400e;
+    --pf-err-bg: #3b1a1a; --pf-err-fg: #fca5a5; --pf-err-border: #991b1b;
+    --pf-info-bg: #1a2740; --pf-info-fg: #93c5fd; --pf-info-border: #1d4ed8;
+    --pf-ins-bg: #0c2a3a; --pf-ins-fg: #7dd3fc;
+    --pf-tip-high-bg: #3b1a1a; --pf-tip-high-border: #ef4444; --pf-tip-high-fg: #fecaca;
+    --pf-tip-med-bg: #3a2e12; --pf-tip-med-border: #f59e0b; --pf-tip-med-fg: #fde68a;
+    --pf-tip-low-bg: #1a2740; --pf-tip-low-border: #60a5fa; --pf-tip-low-fg: #bfdbfe;
   }
 }
 * { box-sizing: border-box; }
@@ -39,7 +57,7 @@ select:disabled { opacity: .5; }
 
 .chat { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; height: 100%; }
 .topbar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: var(--panel);
-  border-bottom: 1px solid var(--border); }
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .help-trigger { margin-left: auto; white-space: nowrap; }
 .menu { display: none; padding: 4px 10px; font-size: 18px; }
 .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
@@ -98,7 +116,8 @@ select:disabled { opacity: .5; }
 .translation { padding: 8px 12px; border-left: 3px solid var(--accent); font-size: 14px; color: var(--muted); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .actions .ghost { font-size: 13px; padding: 4px 10px; }
-  .suggested-reply { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-left: 3px solid var(--accent); padding-left: 10px; font-size: 14px; }
+.suggested-reply { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0 8px 10px;
+  border-left: 3px solid var(--accent); font-size: 14px; }
 .timings { font-size: 11.5px; color: var(--muted); opacity: .8; margin-left: auto; }
 .vocab { display: flex; flex-wrap: wrap; gap: 6px; }
 .vocab span { background: var(--chip); border-radius: 999px; padding: 3px 11px; font-size: 13px; }
@@ -135,11 +154,13 @@ select:disabled { opacity: .5; }
   .scrim { display: block; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.35); }
   .menu { display: inline-block; }
   .composer { flex-wrap: wrap; }
+  .help-trigger { margin-left: 0; }
 }
 .build { margin: 0; opacity: .7; }
 
 /* ========================================================
    PronunciationFeedback — stili del componente fonetico
+   (variabili --pf-* definite in :root / dark)
    ======================================================== */
 
 .pf-root {
@@ -157,9 +178,9 @@ select:disabled { opacity: .5; }
   font-size: 13px;
   margin-bottom: 8px;
 }
-.pf-verdict-ok      { background: var(--ok-bg,  #d1fae5); color: #065f46; }
-.pf-verdict-dubbio  { background: var(--warn-bg, #fef3c7); color: #92400e; }
-.pf-verdict-rivedere{ background: var(--err-bg,  #fee2e2); color: #991b1b; }
+.pf-verdict-ok      { background: var(--pf-ok-bg); color: var(--pf-ok-fg); }
+.pf-verdict-dubbio  { background: var(--pf-warn-bg); color: var(--pf-warn-fg); }
+.pf-verdict-rivedere{ background: var(--pf-err-bg); color: var(--pf-err-fg); }
 
 /* --- Blocco IPA allineato (target brevi) --- */
 .pf-ipa-block {
@@ -195,16 +216,14 @@ select:disabled { opacity: .5; }
   font-family: monospace;
 }
 .pf-sym-match  { color: inherit; }
-.pf-sym-sub    { background: #fef3c7; color: #92400e; font-weight: 700; text-decoration: underline; }
-.pf-sym-del    { background: #fee2e2; color: #991b1b; font-weight: 700; text-decoration: line-through; }
-.pf-sym-ins    { background: #e0f2fe; color: #0369a1; font-style: italic; }
+.pf-sym-sub    { background: var(--pf-warn-bg); color: var(--pf-warn-fg); font-weight: 700; text-decoration: underline; }
+.pf-sym-del    { background: var(--pf-err-bg); color: var(--pf-err-fg); font-weight: 700; text-decoration: line-through; }
+.pf-sym-ins    { background: var(--pf-ins-bg); color: var(--pf-ins-fg); font-style: italic; }
 
 .pf-diffs { margin: 4px 0 2px; }
 .pf-short-caveat { margin-top: 6px; }
 
 /* --- Target lunghi: parole --- */
-.pf-long { }
-
 .pf-words {
   display: flex;
   flex-wrap: wrap;
@@ -228,10 +247,10 @@ select:disabled { opacity: .5; }
   font-family: inherit;
   transition: background 0.15s;
 }
-.pf-word-chip.ok       { border-color: #a7f3d0; background: #d1fae5; color: #065f46; }
-.pf-word-chip.dubbio   { border-color: #fcd34d; background: #fef3c7; color: #92400e; cursor: pointer; }
-.pf-word-chip.rivedere { border-color: #fca5a5; background: #fee2e2; color: #991b1b; cursor: pointer; }
-.pf-word-chip:hover    { filter: brightness(0.95); }
+.pf-word-chip.ok       { border-color: var(--pf-ok-border); background: var(--pf-ok-bg); color: var(--pf-ok-fg); }
+.pf-word-chip.dubbio   { border-color: var(--pf-warn-border); background: var(--pf-warn-bg); color: var(--pf-warn-fg); cursor: pointer; }
+.pf-word-chip.rivedere { border-color: var(--pf-err-border); background: var(--pf-err-bg); color: var(--pf-err-fg); cursor: pointer; }
+.pf-word-chip:hover    { filter: brightness(1.08); }
 
 .pf-word-icon { font-size: 10px; vertical-align: super; }
 
@@ -247,29 +266,28 @@ select:disabled { opacity: .5; }
   padding: 8px 10px;
   min-width: 200px;
   max-width: 280px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
   font-size: 12px;
 }
 .pf-detail-line { margin: 2px 0; font-family: monospace; }
 .pf-detail-tip  { margin-top: 6px; font-style: italic; color: var(--muted); line-height: 1.4; }
 
-/* --- Tips fonetici --- */
+/* --- Tips fonetici (leggibili in light e dark) --- */
 .pf-tips {
   margin: 6px 0 4px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .pf-tip {
-  font-size: 12px;
-  line-height: 1.4;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--panel);
+  font-size: 12.5px;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: 8px;
   border-left: 3px solid;
 }
-.pf-tip-high   { border-color: #ef4444; background: #fff5f5; }
-.pf-tip-medium { border-color: #f59e0b; background: #fffbeb; }
-.pf-tip-low    { border-color: #60a5fa; background: #eff6ff; }
+.pf-tip-high   { border-color: var(--pf-tip-high-border); background: var(--pf-tip-high-bg); color: var(--pf-tip-high-fg); }
+.pf-tip-medium { border-color: var(--pf-tip-med-border); background: var(--pf-tip-med-bg); color: var(--pf-tip-med-fg); }
+.pf-tip-low    { border-color: var(--pf-tip-low-border); background: var(--pf-tip-low-bg); color: var(--pf-tip-low-fg); }
 
 .pf-disclaimer { margin-top: 6px; }
