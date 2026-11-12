@@ -116,8 +116,29 @@ select:disabled { opacity: .5; }
 .translation { padding: 8px 12px; border-left: 3px solid var(--accent); font-size: 14px; color: var(--muted); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .actions .ghost { font-size: 13px; padding: 4px 10px; }
-.suggested-reply { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0 8px 10px;
-  border-left: 3px solid var(--accent); font-size: 14px; }
+.suggested-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0 8px 10px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+}
+.suggested-reply-label { display: block; }
+.suggested-reply-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.suggested-reply-input {
+  flex: 1;
+  min-width: 12rem;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
 .timings { font-size: 11.5px; color: var(--muted); opacity: .8; margin-left: auto; }
 .vocab { display: flex; flex-wrap: wrap; gap: 6px; }
 .vocab span { background: var(--chip); border-radius: 999px; padding: 3px 11px; font-size: 13px; }

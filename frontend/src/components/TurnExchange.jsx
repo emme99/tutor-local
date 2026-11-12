@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import PronunciationFeedback from "./PronunciationFeedback.jsx";
 
 /**
@@ -23,6 +24,15 @@ export default function TurnExchange({
   const hidden = hideText && !revealed;
   const showFix = t.mode !== "translate" && t.tutor.corrections.length > 0;
   const isPracticing = practice?.turnId === t.id;
+
+  // Override manuale della frase suggerita (default = suggested_reply del tutor).
+  const [replyDraft, setReplyDraft] = useState(t.tutor.suggested_reply || "");
+  useEffect(() => {
+    setReplyDraft(t.tutor.suggested_reply || "");
+  }, [t.id, t.tutor.suggested_reply]);
+
+  const replyTarget = replyDraft.trim();
+  const canPracticeReply = replyTarget.length > 0;
 
   return (
     <div className="exchange">
@@ -72,17 +82,41 @@ export default function TurnExchange({
 
           {t.mode !== "translate" && t.tutor.suggested_reply && (
             <div className="suggested-reply">
-              <div>
-                <b>Puoi rispondere:</b> {t.tutor.suggested_reply}
+              <label className="suggested-reply-label" htmlFor={`reply-draft-${t.id}`}>
+                <b>Puoi rispondere:</b>
+                <span className="muted small"> (modificabile)</span>
+              </label>
+              <div className="suggested-reply-row">
+                <input
+                  id={`reply-draft-${t.id}`}
+                  type="text"
+                  className="suggested-reply-input"
+                  value={replyDraft}
+                  onChange={(e) => setReplyDraft(e.target.value)}
+                  placeholder="Scrivi o modifica la frase da praticare"
+                  disabled={busy || recording || practice?.recording}
+                  autoComplete="off"
+                />
+                {replyDraft !== (t.tutor.suggested_reply || "") && (
+                  <button
+                    type="button"
+                    className="ghost"
+                    title="Ripristina il suggerimento del tutor"
+                    onClick={() => setReplyDraft(t.tutor.suggested_reply || "")}
+                    disabled={busy || recording || practice?.recording}
+                  >
+                    ↺
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => canPracticeReply && onOpenPractice(t.id, replyTarget)}
+                  disabled={busy || recording || practice?.recording || !canPracticeReply}
+                >
+                  🔊 Ascolta e prova
+                </button>
               </div>
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => onOpenPractice(t.id, t.tutor.suggested_reply)}
-                disabled={busy || recording || practice?.recording}
-              >
-                🔊 Ascolta e prova a rispondere
-              </button>
             </div>
           )}
 

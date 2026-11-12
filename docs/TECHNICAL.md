@@ -132,7 +132,7 @@ Base: `http://127.0.0.1:8010`. Nessuna autenticazione (solo localhost, §14).
 | Metodo | Percorso | Corpo | Risposta |
 |---|---|---|---|
 | GET | `/api/health` | — | `{llm:{base_url,model}, stt_model, tts_enabled}` |
-| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false), `tts_speed?` (0.3, 0.7, 1.0 default 1.0) | `TurnResponse` |
+| POST | `/api/turn` | `multipart/form-data`: `session_id`, `mode` (`conversation`\|`scenario`\|`translate`), `level` (A2…C1), `spoken_lang` (`en`\|`it`), `text?`, `audio?` (file), `speak?` (bool, default true), `speak_explanations?` (bool, default false), `tts_speed?` (0.8, 0.9, 1.0, 1.1, 1.2; default 1.0) | `TurnResponse` |
 | POST | `/api/translate` | JSON `{text, target:"it"\|"en"}` | `{translation}` (non salva nulla) |
 | POST | `/api/help` | `multipart/form-data`: `session_id`, `text?` oppure `audio?` (domanda in italiano), `tts_speed?` (default 1.0) | `HelpResponse` (risposta italiana, `audio_b64` + `audio_segments` per le parti in inglese, timings; non persistita) |
 | POST | `/api/speak` | JSON `{text, lang, speed?}` (speed default 1.0) | `{audio_b64, audio_mime}` |
@@ -363,7 +363,7 @@ nel tema scuro, così tip e chip restano leggibili in light e dark.
 - **Aiuti per l'ascolto**: «Ascolta di nuovo», «Traduci» (`/api/translate`), «Solo ascolto» (testo nascosto finché non si clicca),
   🔊 per ogni frase suggerita nello scenario (`/api/speak`).
 - **Velocità inglese**: selettore nella sidebar sinistra (0,8×, 0,9×, 1,0×, 1,1×, 1,2×); non modifica il parlato italiano.
-- **Risposta suggerita**: mostra `suggested_reply`, una possibile frase dell'allievo per rispondere alla domanda del tutor. «Ascolta e prova a rispondere» riproduce e confronta questo testo con `/api/pronunciation-check`. La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il risultato viene mostrato tramite il componente `PronunciationFeedback`:
+- **Risposta suggerita**: mostra `suggested_reply` in un campo **modificabile** (default = proposta del tutor; ↺ ripristina il suggerimento). «Ascolta e prova» usa il testo del campo come `target` di `/api/pronunciation-check` (override solo UI, nessun cambio API). La frase corretta mantiene un'azione separata «Ascolta frase corretta». Il risultato viene mostrato tramite il componente `PronunciationFeedback`:
   - sui **target brevi** (`short_target: true`): niente percentuale ingannevole; verdetto qualitativo con icona (`✓ Ci sei`, `~ Dubbio`, `✗ Da rivedere`), righe IPA atteso/udito allineate tramite `ops` (simboli sostituiti/omessi/inseriti evidenziati) e riepilogo testuale delle differenze;
   - sui **target lunghi**: badge score secondario, chip colorati per singola parola con stato (`ok`, `dubbio`, `da rivedere`) espandibili con click per vedere atteso, udito e tip specifico, più i primi due suggerimenti globali (`issues`).
 - **Aiuto contestuale**: il pulsante «Chiedi in italiano» nella barra superiore apre un drawer destro con input testuale e microfono dedicato. La route `/api/help` riceve la domanda, e domanda/risposta restano nel pannello senza entrare nella timeline persistita o interrompere la pratica. La risposta è segmentata per lingua: le parti inglesi usano la voce inglese, quelle italiane la voce italiana.
